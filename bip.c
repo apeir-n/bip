@@ -1,12 +1,19 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 typedef struct {
     unsigned char r, g, b;
 } Pixel;
 
-void save(const char *filename, int width, int height, Pixel pixels[height][width]) {
-    FILE *f = fopen(filename, "wb");
+typedef struct {
+    int w, h;
+    char *name;
+    Pixel **pix;
+} Image;
+
+void save(Image *img) {
+    FILE *f = fopen(img->name, "wb");
 
     /*  3 * width   3 bytes per pixel (rgb), so * width = num of bytes needed per row
      *  + 3         offset in order to round to nearest multiple of 4 after some bitwise math
@@ -16,8 +23,8 @@ void save(const char *filename, int width, int height, Pixel pixels[height][widt
      *             ~3 = 0xfffffffc = 11111111 11111111 11111111 11111100
      *              so when you AND all the bits against this, it keeps them all except last 2
      */
-    int padded_row_size = (3 * width + 3) & (~3);
-    int filesize = 54 + padded_row_size * height;
+    int padded_row_size = (3 * img->w + 3) & (~3);
+    int filesize = 54 + padded_row_size * img->h;
 
     unsigned char bmpfileheader[14] = {
         'B',            'M',
@@ -28,8 +35,8 @@ void save(const char *filename, int width, int height, Pixel pixels[height][widt
 
     unsigned char bmpinfoheader[40] = {
         40,             0,              0,              0,
-        width,          width>>8,       width>>16,      width>>24,
-        height,         height>>8,      height>>16,     height>>24,
+        img->w,         img->w>>8,      img->w>>16,     img->w>>24,
+        img->h,         img->h>>8,      img->h>>16,     img->h>>24,
         1,              0,              24,             0
     };
 
@@ -37,14 +44,14 @@ void save(const char *filename, int width, int height, Pixel pixels[height][widt
     fwrite(bmpinfoheader, 1, 40, f);
 
     unsigned char padding[3] = {0,0,0};
-    int padding_size = padded_row_size - width * 3;
+    int padding_size = padded_row_size - img->w * 3;
 
-    for (int y = height - 1; y >= 0; y -= 1) {
-        for (int x = 0; x < width; x += 1) {
+    for (int y = img->h - 1; y >= 0; y -= 1) {
+        for (int x = 0; x < img->w; x += 1) {
             unsigned char color[3] = {
-                pixels[y][x].b,
-                pixels[y][x].g,
-                pixels[y][x].r
+                img->pix[y][x].b,
+                img->pix[y][x].g,
+                img->pix[y][x].r
             };
             fwrite(color, 1, 3, f);
         }
@@ -53,19 +60,19 @@ void save(const char *filename, int width, int height, Pixel pixels[height][widt
     fclose(f);
 }
 
-void write(int h, int w, Pixel img[h][w]) {
-    for (int y = 0; y < h; y += 1) {
-        for (int x = 0; x < w; x += 1) {
+void write(Image *img) {
+    for (int y = 0; y < img->h; y += 1) {
+        for (int x = 0; x < img->w; x += 1) {
             int val = (x & y) % 18;
 
             if (val > 12) {
-                img[y][x].r = 0xFF;
-                img[y][x].g = 0xFF;
-                img[y][x].b = 0xFF;
+                img->pix[y][x].r = 0xFF;
+                img->pix[y][x].g = 0xFF;
+                img->pix[y][x].b = 0xFF;
             } else {
-                img[y][x].r = 0x00;
-                img[y][x].g = 0x00;
-                img[y][x].b = 0x00;
+                img->pix[y][x].r = 0x00;
+                img->pix[y][x].g = 0x00;
+                img->pix[y][x].b = 0x00;
             }
             /* if (val > 12) {
                 img[y][x].r = (x ^ y) ^ 0xFF;
@@ -80,12 +87,40 @@ void write(int h, int w, Pixel img[h][w]) {
     }
 }
 
+void palloc(Image *img) {
+    img->pix = malloc(img->h * sizeof(Pixel *));
+    if (!img->pix) {
+        fprintf(stderr, "uh ohs... couldn't malloc rows! 🙈💩💥\n");
+        exit(1);
+    }
+    for (int i = 0; i < img->h; i += 1) {
+        img->pix[i] = malloc(img->w * sizeof(Pixel));
+        if (!img->pix[i]) {
+            fprintf(stderr, "uh ohs... couldn't malloc row! 🙈💩💥\n", i);
+            exit(1);
+        }
+    }
+
+}
+
+void pfree(Image *img) {
+    for (int i = 0; i < img->h; i += 1) {
+        free(img->pix[i]);
+    }
+    free(img->pix);
+}
+
 int main() {
-    int h = 256, w = 256;
-    Pixel img[h][w];
+    Image out = {
+        .w = 256,
+        .h = 256,
+        .name = "bitty.bmp"
+    };
 
-    write(h, w, img);
+    palloc(&out);
+    write(&out);
+    save(&out);
+    pfree(&out);
 
-    save("bitty.bmp", w, h, img);
     return 0;
 }
