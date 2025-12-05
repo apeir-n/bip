@@ -1,0 +1,5 @@
+#!/bin/sh
+
+if cc -o bip bip.c; then
+    ./bip && nsxiv --anti-alias=no *.bmp
+fi
