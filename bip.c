@@ -96,7 +96,7 @@ void palloc(Image *img) {
     for (int i = 0; i < img->h; i += 1) {
         img->pix[i] = malloc(img->w * sizeof(Pixel));
         if (!img->pix[i]) {
-            fprintf(stderr, "uh ohs... couldn't malloc row! 🙈💩💥\n", i);
+            fprintf(stderr, "uh ohs... couldn't malloc row %d! 🙈💩💥\n", i);
             exit(1);
         }
     }
