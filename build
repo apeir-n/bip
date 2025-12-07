@@ -1,5 +1,12 @@
 #!/bin/sh
 
-if cc -o bip bip.c; then
-    ./bip && nsxiv --anti-alias=no *.bmp
-fi
+case "$1" in
+    "")
+        if cc -o bip bip.c; then
+            ./bip && nsxiv --anti-alias=no *.bmp
+        fi
+        ;;
+    "clean")
+        rm *.bmp bip
+        ;;
+esac

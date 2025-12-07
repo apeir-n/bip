@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 typedef struct {
     unsigned char r, g, b;
@@ -14,6 +13,10 @@ typedef struct {
 
 void save(Image *img) {
     FILE *f = fopen(img->name, "wb");
+    if (!f) {
+        fprintf(stderr, "couldn't open file %s for writing 🙈💩💥\n", img->name);
+        exit(1);
+    }
 
     /*  3 * width   3 bytes per pixel (rgb), so * width = num of bytes needed per row
      *  + 3         offset in order to round to nearest multiple of 4 after some bitwise math
@@ -60,10 +63,22 @@ void save(Image *img) {
     fclose(f);
 }
 
+int modsafe(int x, int y) {
+    return y == 0 ? 0 : x % y;
+}
+
+int divsafe(int x, int y) {
+    return y == 0 ? 0 : x / y;
+}
+
 void write(Image *img) {
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
-            int val = (x & y) % 18;
+            /* int val = (x & y) % 18; */
+            /* int val = ((x ^ y) & (x << 2)) % 37; */
+            /* int val = ((x * y) >> 3) ^ ((y - x) << 1); */
+            /* int val = (((x | y) + (x ^ y)) & ((~x) << 1)) % 18; */
+            int val = modsafe((((x | y) + (x ^ y)) & ((~x) << 1)), (((x * y) >> 3) ^ ((y - x) << 1)));
 
             if (val > 12) {
                 img->pix[y][x].r = 0xFF;
@@ -74,14 +89,14 @@ void write(Image *img) {
                 img->pix[y][x].g = 0x00;
                 img->pix[y][x].b = 0x00;
             }
-            /* if (val > 12) {
-                img[y][x].r = (x ^ y) ^ 0xFF;
-                img[y][x].g = (x | y) ^ 0xFF;
-                img[y][x].b = (x & y) ^ 0xFF;
+            /* if (val > 5) {
+                img->pix[y][x].r = (x ^ y) ^ 0xFF;
+                img->pix[y][x].g = (x | y) ^ 0xFF;
+                img->pix[y][x].b = (x & y) ^ 0xFF;
             } else {
-                img[y][x].r = (x ^ y) & 0xFF;
-                img[y][x].g = (x | y) & 0xFF;
-                img[y][x].b = (x & y) & 0xFF;
+                img->pix[y][x].r = (x ^ y) & 0xFF;
+                img->pix[y][x].g = (x | y) & 0xFF;
+                img->pix[y][x].b = (x & y) & 0xFF;
             } */
         }
     }
@@ -90,13 +105,13 @@ void write(Image *img) {
 void palloc(Image *img) {
     img->pix = malloc(img->h * sizeof(Pixel *));
     if (!img->pix) {
-        fprintf(stderr, "uh ohs... couldn't malloc rows! 🙈💩💥\n");
+        fprintf(stderr, "couldn't malloc rows 🙈💩💥\n");
         exit(1);
     }
     for (int i = 0; i < img->h; i += 1) {
         img->pix[i] = malloc(img->w * sizeof(Pixel));
         if (!img->pix[i]) {
-            fprintf(stderr, "uh ohs... couldn't malloc row %d! 🙈💩💥\n", i);
+            fprintf(stderr, "couldn't malloc row %d 🙈💩💥\n", i);
             exit(1);
         }
     }
