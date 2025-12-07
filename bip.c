@@ -1,6 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum Operator {
+    OP_ADD,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
+    OP_MOD,
+    OP_AND,
+    OP_OOR,
+    OP_XOR,
+    OP_SHL,
+    OP_SHR
+};
+
+enum Operand {
+    VAR_X,
+    VAR_Y,
+    VAR_C /* const */
+};
+
 typedef struct {
     unsigned char r, g, b;
 } Pixel;
@@ -10,6 +29,13 @@ typedef struct {
     char *name;
     Pixel **pix;
 } Image;
+
+typedef struct {
+    enum Operator op;
+    enum Operand l;
+    enum Operand r;
+    int constant;
+} Expr;
 
 void save(Image *img) {
     FILE *f = fopen(img->name, "wb");
@@ -63,41 +89,57 @@ void save(Image *img) {
     fclose(f);
 }
 
-int modsafe(int x, int y) {
-    return y == 0 ? 0 : x % y;
+int getop(enum Operand which, int x, int y, int c) {
+    switch (which) {
+        case VAR_X: return x;
+        case VAR_Y: return y;
+        case VAR_C: return c;
+        default: return 0;
+    }
 }
 
-int divsafe(int x, int y) {
-    return y == 0 ? 0 : x / y;
+int eval(Expr e, int x, int y) {
+    int a = getop(e.l, x, y, e.constant);
+    int b = getop(e.r, x, y, e.constant);
+
+    switch (e.op) {
+        case OP_ADD: return a + b;
+        case OP_SUB: return a - b;
+        case OP_MUL: return a * b;
+        case OP_DIV: return b == 0 ? 0 : a / b;
+        case OP_MOD: return b == 0 ? 0 : a % b;
+        case OP_AND: return a & b;
+        case OP_OOR: return a | b;
+        case OP_XOR: return a ^ b;
+        case OP_SHL: return a << (b % 8);
+        case OP_SHR: return a >> (b % 8);
+        default: return 0;
+    }
+}
+
+Expr randexpr() {
+    Expr e;
+    e.op = rand() % 10;
+    e.l = rand() % 3;
+    e.r = rand() % 3;
+    e.constant = rand() % 16;
+    return e;
 }
 
 void write(Image *img) {
+    /* Expr ptrn = randexpr(); */
+    Expr ptrn = { OP_SHR, VAR_X, VAR_Y, 18 };
+
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
-            /* int val = (x & y) % 18; */
-            /* int val = ((x ^ y) & (x << 2)) % 37; */
-            /* int val = ((x * y) >> 3) ^ ((y - x) << 1); */
-            /* int val = (((x | y) + (x ^ y)) & ((~x) << 1)) % 18; */
-            int val = modsafe((((x | y) + (x ^ y)) & ((~x) << 1)), (((x * y) >> 3) ^ ((y - x) << 1)));
+            int val = eval(ptrn, x, y);
+            int thresh = 12;
 
-            if (val > 12) {
-                img->pix[y][x].r = 0xFF;
-                img->pix[y][x].g = 0xFF;
-                img->pix[y][x].b = 0xFF;
+            if (val % 256 > thresh) {
+                img->pix[y][x] = (Pixel){0xff, 0xff, 0xff};
             } else {
-                img->pix[y][x].r = 0x00;
-                img->pix[y][x].g = 0x00;
-                img->pix[y][x].b = 0x00;
+                img->pix[y][x] = (Pixel){0x00, 0x00, 0x00};
             }
-            /* if (val > 5) {
-                img->pix[y][x].r = (x ^ y) ^ 0xFF;
-                img->pix[y][x].g = (x | y) ^ 0xFF;
-                img->pix[y][x].b = (x & y) ^ 0xFF;
-            } else {
-                img->pix[y][x].r = (x ^ y) & 0xFF;
-                img->pix[y][x].g = (x | y) & 0xFF;
-                img->pix[y][x].b = (x & y) & 0xFF;
-            } */
         }
     }
 }
