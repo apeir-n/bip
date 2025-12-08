@@ -118,6 +118,38 @@ int eval(Expr e, int x, int y) {
     }
 }
 
+/*******************************************************
+ *************** DEBUG *********************************
+ *******************************************************/
+
+const char* opname(int op) {
+    switch (op) {
+        case OP_ADD: return "ADD";
+        case OP_SUB: return "SUB";
+        case OP_MUL: return "MUL";
+        case OP_DIV: return "DIV";
+        case OP_MOD: return "MOD";
+        case OP_AND: return "AND";
+        case OP_OOR: return "OOR";
+        case OP_XOR: return "XOR";
+        case OP_SHL: return "SHL";
+        case OP_SHR: return "SHR";
+        default: return "???";
+    }
+}
+
+const char* varname(int var) {
+    switch (var) {
+        case VAR_X: return "X";
+        case VAR_Y: return "Y";
+        case VAR_C: return "C";
+        default: return "???";
+    }
+}
+/*******************************************************
+ *************** DEBUG *********************************
+ *******************************************************/
+
 Expr randexpr() {
     Expr e;
     e.op = rand() % 10;
@@ -128,7 +160,8 @@ Expr randexpr() {
 }
 
 void write(Image *img) {
-    Expr ptrn = randexpr();
+    /* Expr ptrn = randexpr(); */
+    Expr ptrn = { OP_SHR, VAR_X, VAR_Y, 18 };
 
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
@@ -169,8 +202,7 @@ void pfree(Image *img) {
 
 int main() {
     srand(time(NULL));
-
-    Image out = {
+    /* Image out = {
         .w = 256,
         .h = 256,
         .name = "bitty.bmp"
@@ -179,7 +211,16 @@ int main() {
     palloc(&out);
     write(&out);
     save(&out);
-    pfree(&out);
+    pfree(&out); */
+
+
+    Expr e = randexpr();
+
+    printf("op: %s\nleft: %s\nright: %s\nconst:%d\n", opname(e.op), varname(e.l), varname(e.r), e.constant);
+
+    int randint = rand();
+
+    printf("randint: %d\n", randint);
 
     return 0;
 }
