@@ -123,12 +123,46 @@ Expr randexpr() {
     e.op = rand() % 10;
     e.l = rand() % 3;
     e.r = rand() % 3;
-    e.constant = rand() % 16;
+    e.constant = rand() % 100;
     return e;
+}
+
+const char* opname(int op) {
+    switch (op) {
+        case OP_ADD: return "ADD";
+        case OP_SUB: return "SUB";
+        case OP_MUL: return "MUL";
+        case OP_DIV: return "DIV";
+        case OP_MOD: return "MOD";
+        case OP_AND: return "AND";
+        case OP_OOR: return "OOR";
+        case OP_XOR: return "XOR";
+        case OP_SHL: return "SHL";
+        case OP_SHR: return "SHR";
+        default: return "???";
+    }
+}
+
+const char* varname(int var) {
+    switch (var) {
+        case VAR_X: return "X";
+        case VAR_Y: return "Y";
+        case VAR_C: return "C";
+        default: return "???";
+    }
+}
+
+void printexpr(Expr e) {
+    const char *op_str[] = { "+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>" };
+    const char *var_str[] = { "x", "y", "c" };
+
+    printf("evaluating: (%s %s %s), where c = %d\n",
+            var_str[e.l], op_str[e.op], var_str[e.r], e.constant);
 }
 
 void write(Image *img) {
     Expr ptrn = randexpr();
+    printexpr(ptrn);
 
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
