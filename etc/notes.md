@@ -20,6 +20,20 @@ i'd like to extend the expression framework to generate more complex equations, 
 - but theres probably a more elegant way to generate these kinds of expressions
     - this approach feels too manual
 
+- i have some sort of tree like structure in my mind where the branches are sets of parentheses
+- inside the parentheses, there is an operator and an operand on either side
+    - `( a ? b )`
+- the operators can either be:
+    - x or y from 2d img array
+    - random constant
+    - or another branch, i.e. another set of parentheses containing a sub expression
+- the operands can be any from the enumerated list
+- then another constant can be appended to the end, with an operator like modulo or bitshifter
+- this approach with a template `((a ? b) ? (a ? b)) ? c` could produce things like:
+    - `((x + x) - (y + y)) << 1`
+    - `((x ^ y) & (x << 2)) % 37`
+    - `(((x | y) + (x ^ y)) & ((~x) << 1)) % 18`
+
 ## parameters for cli later
 - default is random, but user can input expression that will be passed to `int val` in `write()`
 - maybe also `int thresh`
