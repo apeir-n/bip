@@ -38,12 +38,28 @@ typedef struct Expr {
     };
 } Expr;
 
+int depth_param(int depth, int random) {
+
+    /* 
+     * depth = 1       only returns 1 leaf:            a
+     * depth = 2       returns 1 branch:               (a ? b)
+     * depth = 3       returns 3 branches, 4 leaves:   ((a ? b) ? (c ? d))
+     * depth = 4       returns 7 branches, 8 leaves:   (((a ? b) ? (c ? d)) ? ((e ? f) ? (g ? h)))
+     * 
+     * here the depth is minimized at 2, and randomness is optionally added to increase the number
+     * iterations (branches). random is maxed at 4, and if it's zero, then the same number of branches
+     * are made each time the expression is generated.
+     */
+
+    if (depth < 2) depth = 2;
+    if (random > 4) random = 4;
+    return depth + (random > 0 ? rand() % random : 0);
+}
+
 Expr *make_expr(int depth) {
     Expr *e = malloc(sizeof(Expr));
 
-    /* the rand() % 4 part makes it more unpredictable, without it, the depth param denotes the number of nodes */
-    /* if (depth <= 1) { */
-    if (depth <= 1 || rand() % 4 == 0) {
+    if (depth <= 1) {
         /* base case: make a leaf */
         e->kind = EXPR_VAL;
         e->val_expr = rand() % 3;
@@ -127,10 +143,11 @@ void free_expr(Expr *e) {
 int main() {
     srand(time(NULL));
 
-    Expr *e = make_expr(4);
+    Expr *e = make_expr(depth_param(2, 4));
     printf("expression: ");
     print_expr(e);
     printf("\n");
     free_expr(e);
+
     return 0;
 }
