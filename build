@@ -1,15 +1,16 @@
 #!/bin/sh
 
+runner () {
+    local os="$(uname)"
+
+    case "$os" in
+        "Darwin") ./bip && open -a Preview *.bmp ;;
+        "Linux") ./bip && nsxiv --anti-alias=no *.bmp ;;
+    esac
+}
+
 case "$1" in
-    "")
-        if cc -o bip bip.c; then
-            ./bip && nsxiv --anti-alias=no *.bmp
-        fi
-        ;;
-    "run")
-        ./bip && nsxiv --anti-alias=no *.bmp
-        ;;
-    "clean")
-        rm *.bmp bip
-        ;;
+    "") cc -o bip bip.c && runner ;;
+    "run") runner ;;
+    "clean") rm *.bmp bip ;;
 esac

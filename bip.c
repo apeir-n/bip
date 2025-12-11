@@ -226,10 +226,7 @@ void save(Image *img) {
     fclose(f);
 }
 
-void write(Image *img) {
-    Expr *ptrn = make_expr(depth_param(4, 2));
-    int c = rand() % 30;
-
+void write(Image *img, Expr *ptrn, int c) {
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
             int val = eval_expr(ptrn, x, y, c);
@@ -242,16 +239,14 @@ void write(Image *img) {
             }
         }
     }
-
-    printf("expression: ");
-    print_expr(ptrn);
-    printf("\n");
-    printf("where c = %d\n", c);
-    free_expr(ptrn);
 }
 
 int main() {
     srand(time(NULL));
+
+    int depth = depth_param(4, 2);
+    int c = rand() % 30;
+    Expr *e = make_expr(depth);
 
     Image out = {
         .w = 256,
@@ -260,9 +255,15 @@ int main() {
     };
 
     palloc(&out);
-    write(&out);
+    write(&out, e, c);
     save(&out);
     pfree(&out);
+
+    printf("expression: ");
+    print_expr(e);
+    printf("\n");
+    printf("where c = %d\n", c);
+    free_expr(e);
 
     return 0;
 }
