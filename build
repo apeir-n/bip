@@ -6,6 +6,9 @@ case "$1" in
             ./bip && nsxiv --anti-alias=no *.bmp
         fi
         ;;
+    "run")
+        ./bip && nsxiv --anti-alias=no *.bmp
+        ;;
     "clean")
         rm *.bmp bip
         ;;
