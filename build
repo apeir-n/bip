@@ -21,6 +21,21 @@ runner () {
     esac
 }
 
+installer () {
+    local bindir="$HOME/.local/bin"
+    
+    if [ -d "$bindir" ]; then
+        ln -s bip "$bindir"
+    else
+        mkdir -p "$bindir"
+        ln -s bip "$bindir"
+    fi
+
+    if [ -e "$HOME/.profile" ];
+        echo "export PATH=$HOME/.local/bin:$PATH" >> "$HOME/.profile"
+    fi
+}
+
 case "$1" in
     "") cc -o bip bip.c && runner ;;
     "run") runner ;;
