@@ -1,0 +1,20 @@
+#!/bin/sh
+
+os="$(uname)"
+
+case "$os" in
+    "Darwin") bip && open -a Preview "$(pwd)"/*.bmp ;;
+    *)
+        bip
+        if command -v nsxiv >/dev/null 2>&1; then
+            nsxiv --anti-alias=no "$(pwd)"/*.bmp
+        elif command -v feh >/dev/null 2>&1; then
+            feh "$(pwd)"/*.bmp
+        elif command -v imv >/dev/null 2>&1; then
+            imv -s "$(pwd)"/*.bmp
+        elif command -v swayimg >/dev/null 2>&1; then
+            swayimg --antialiasing none "$(pwd)"/*.bmp
+        else
+            xdg-open "$(pwd)"/*.bmp
+        fi
+esac

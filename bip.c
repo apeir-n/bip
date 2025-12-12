@@ -26,16 +26,6 @@ typedef enum {
     EXPR_VAL
 } ExprKind;
 
-typedef struct {
-    unsigned char r, g, b;
-} Pixel;
-
-typedef struct {
-    int w, h;
-    char *name;
-    Pixel **pix;
-} Image;
-
 typedef struct Expr {
     ExprKind kind;
     union {
@@ -47,6 +37,16 @@ typedef struct Expr {
         enum Operand val_expr;
     };
 } Expr;
+
+typedef struct {
+    unsigned char r, g, b;
+} Pixel;
+
+typedef struct {
+    int w, h;
+    char *name;
+    Pixel **pix;
+} Image;
 
 int depth_param(int depth, int random) {
 
@@ -63,8 +63,7 @@ int depth_param(int depth, int random) {
 
     if (depth < 2) depth = 2;
     if (random > 4) random = 4;
-    /* return depth + (random > 0 ? rand() % random : 0); */
-    return depth + (rand() % random);
+    return depth + (random > 0 ? rand() % random : 0);
 }
 
 Expr *make_expr(int depth) {
@@ -151,7 +150,7 @@ void free_expr(Expr *e) {
     free(e);
 }
 
-void palloc(Image *img) {
+void alloc_pix(Image *img) {
     img->pix = malloc(img->h * sizeof(Pixel *));
     if (!img->pix) {
         fprintf(stderr, "couldn't malloc rows 🙈💩💥\n");
@@ -164,17 +163,16 @@ void palloc(Image *img) {
             exit(1);
         }
     }
-
 }
 
-void pfree(Image *img) {
+void free_pix(Image *img) {
     for (int i = 0; i < img->h; i += 1) {
         free(img->pix[i]);
     }
     free(img->pix);
 }
 
-void save(Image *img) {
+void save_bmp(Image *img) {
     FILE *f = fopen(img->name, "wb");
     if (!f) {
         fprintf(stderr, "couldn't open file %s for writing 🙈💩💥\n", img->name);
@@ -189,6 +187,7 @@ void save(Image *img) {
      *             ~3 = 0xfffffffc = 11111111 11111111 11111111 11111100
      *              so when you AND all the bits against this, it keeps them all except last 2
      */
+
     int padded_row_size = (3 * img->w + 3) & (~3);
     int filesize = 54 + padded_row_size * img->h;
 
@@ -226,7 +225,7 @@ void save(Image *img) {
     fclose(f);
 }
 
-void write(Image *img, Expr *ptrn, int c) {
+void write_img(Image *img, Expr *ptrn, int c) {
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
             int val = eval_expr(ptrn, x, y, c);
@@ -254,10 +253,10 @@ int main() {
         .name = "bitty.bmp"
     };
 
-    palloc(&out);
-    write(&out, e, c);
-    save(&out);
-    pfree(&out);
+    alloc_pix(&out);
+    write_img(&out, e, c);
+    save_bmp(&out);
+    free_pix(&out);
 
     printf("expression: ");
     print_expr(e);
