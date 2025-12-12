@@ -5,7 +5,19 @@ runner () {
 
     case "$os" in
         "Darwin") ./bip && open -a Preview *.bmp ;;
-        "Linux") ./bip && nsxiv --anti-alias=no *.bmp ;;
+        *)
+            ./bip
+            if command -v nsxiv >/dev/null 2>&1; then
+                nsxiv --anti-alias=no *.bmp
+            elif command -v feh >/dev/null 2>&1; then
+                feh *.bmp
+            elif command -v imv >/dev/null 2>&1; then
+                imv -s *.bmp
+            elif command -v swayimg >/dev/null 2>&1; then
+                swayimg --antialiasing none *.bmp
+            else
+                xdg-open *.bmp
+            fi
     esac
 }
 
