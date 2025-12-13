@@ -62,7 +62,7 @@ int depth_param(int depth, int random) {
      */
 
     if (depth < 2) depth = 2;
-    if (random > 4) random = 4;
+    if (random > 5) random = 5;
     return depth + (random > 0 ? rand() % random : 0);
 }
 
@@ -243,8 +243,8 @@ void write_img(Image *img, Expr *ptrn, int c) {
 int main() {
     srand(time(NULL));
 
-    int depth = depth_param(4, 2);
     int c = rand() % 30;
+    int depth = depth_param(2, 4);
     Expr *e = make_expr(depth);
 
     Image out = {
@@ -260,8 +260,7 @@ int main() {
 
     printf("expression: ");
     print_expr(e);
-    printf("\n");
-    printf("where c = %d\n", c);
+    printf("\nwhere c = %d\n", c);
     free_expr(e);
 
     return 0;

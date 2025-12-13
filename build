@@ -1,10 +1,14 @@
 #!/bin/sh
 
-runner () {
-    local os="$(uname)"
+bindir="$HOME/.local/bin"
+os="$(uname)"
 
+runner () {
     case "$os" in
-        "Darwin") ./bip && open *.bmp ;;
+        "Darwin")
+            ./bip
+            open *.bmp
+            ;;
         *)
             ./bip
             if command -v nsxiv >/dev/null 2>&1; then
@@ -18,42 +22,66 @@ runner () {
             else
                 xdg-open *.bmp
             fi
+            ;;
     esac
 }
 
 installer () {
-    local bindir="$HOME/.local/bin"
-    
     [ -d "$bindir" ] || mkdir -p "$bindir"
     cp bip "$bindir"
     cp ./scripts/bop "$bindir"
+}
 
-    #if [ -e "$HOME/.profile" ]; then
-    #    echo "export PATH=$HOME/.local/bin:$PATH" >> "$HOME/.profile"
-    #fi
+uninstaller () {
+    rm "$bindir/bip"
+    rm "$bindir/bop"
 }
 
 cleaner () {
-    rm *.bmp bip
+    rm *.bmp bip >/dev/null 2>&1
 }
 
 helper () {
-    printf "\n\033[94m  build [\033[4;92moptions\033[0;93m: run, install, clean\033[0;94m]\033[0m\n"
+    printf "\n\033[94m  build [\033[4;92moptions\033[0;93m: run, install, clean, ... \033[0;94m]\033[0m\n"
     printf "\n\033[96m  this script offers a simple way to compile, run, and install bip.\n"
-    printf "\n  \033[4;92moptions\033[0m:\n\n"
-    printf "      \033[94mbuild         \033[96m| with no options, 'build' compiles the program, runs it, and opens the resulting image.\n"
-    printf "      \033[94mbuild \033[93mrun     \033[96m| runs the program and opens the resulting image (it must be compiled first).\n"
-    printf "      \033[94mbuild \033[93minstall \033[96m| moves the program from the current directory to the user's ~/.local/bin directory.\n"
-    printf "      \033[94mbuild \033[93mclean   \033[96m| removes the image files and binary from this directory.\n"
-    printf "      \033[94mbuild \033[93mhelp    \033[96m| displays this help message.\n"
+    printf "\n  \033[4;92moptions\033[0;96m:\n\n"
+    printf "      \033[94mbuild           \033[96m- with no options, \033[4;92mbuild\033[0;96m compiles the program, runs it, and opens the resulting image.\n"
+    printf "      \033[94mbuild \033[93mrun       \033[96m- runs the program and opens the resulting image (it must be compiled first).\n"
+    printf "      \033[94mbuild \033[93minstall   \033[96m- moves \033[4;92mbip\033[0;96m and the \033[4;92mbop\033[0;96m script from here to the user's \033[4;92m~/.local/bin\033[0;96m directory.\n"
+    printf "      \033[94mbuild \033[93muninstall \033[96m- removes \033[4;92mbip\033[0;96m and \033[4;92mbop\033[0;96m from the user's \033[4;92m~/.local/bin\033[0;96m directory.\n"
+    printf "      \033[94mbuild \033[93mclean     \033[96m- removes the image files and binary from this directory.\n"
+    printf "      \033[94mbuild \033[93mhelp      \033[96m- displays this help message.\n"
     printf "\n\033[0m"
 }
 
 case "$1" in
-    "") cc -o bip bip.c && runner ;;
-    "run") runner ;;
-    "clean") cleaner ;;
-    "install") installer && cleaner || echo "couldn't complete install." ;;
-    "help") helper ;;
-    *) printf "unknown option: $1\n\nusage:\n" && helper ;;
+    "")
+        cc -o bip bip.c
+        runner
+        ;;
+
+    "run"       | "--run"       | "-r")
+        runner
+        ;;
+
+    "clean"     | "--clean"     | "-c")
+        cleaner
+        ;;
+
+    "install"   | "--install"   | "-i")
+        installer && cleaner || printf "couldn't complete install.\ntry installing manually by moving bip and bop into \033[4;92m~/.local/bin\033[0m or elsewhere in your \033[4;92m\$PATH.\033[0m\n"
+        ;;
+
+    "uninstall" | "--uninstall" | "-u")
+        uninstaller
+        ;;
+
+    "help"      | "--help"      | "-h")
+        helper
+        ;;
+
+    *)
+        printf "unknown option: ${*}\n\nusage:\n"
+        helper
+        ;;
 esac
