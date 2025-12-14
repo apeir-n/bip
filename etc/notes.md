@@ -10,8 +10,10 @@ ideas
 
         expressia | bip && xdg-open *.bmp
         ```
-- i'd probably have to rewrite the whole thing to be able to parse the literal expressions
-    - since i'm using internal enums for all the components and converting them to * / + - etc symbols later in order to print
+    - i'd probably have to rewrite the whole thing to be able to parse the literal expressions
+        - since i'm using internal enums for all the components and converting them to * / + - etc symbols later in order to print
+- i could make bop more robust and make an interface for format conversion with `magick`
+    - i could also add a viewer option
 
 ## parameters for cli later
 - default is random, but user can input expression that will be passed to `int val` in `write()`
@@ -26,3 +28,4 @@ ideas
 - [/] parameterization
 - [ ] xpm
 - [ ] figure out good algorithms for coloring
+- [ ] figure out user input for expressions with input sanitization

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <getopt.h>
+#include <string.h>
 
 enum Operator {
     OP_ADD,
@@ -68,6 +70,11 @@ int depth_param(int depth, int random) {
 
 Expr *make_expr(int depth) {
     Expr *e = malloc(sizeof(Expr));
+
+    if (!e) {
+        fprintf(stderr, "couldn't malloc expression 🙈💩💥\n");
+        exit(1);
+    }
 
     if (depth <= 1) {
         /* base case: make a leaf */
@@ -191,14 +198,14 @@ void save_bmp(Image *img) {
     int padded_row_size = (3 * img->w + 3) & (~3);
     int filesize = 54 + padded_row_size * img->h;
 
-    unsigned char bmpfileheader[14] = {
+    const unsigned char bmpfileheader[14] = {
         'B',            'M',
         filesize,       filesize>>8,    filesize>>16,   filesize>>24,
         0,              0,              0,              0,
         54,             0,              0,              0
     };
 
-    unsigned char bmpinfoheader[40] = {
+    const unsigned char bmpinfoheader[40] = {
         40,             0,              0,              0,
         img->w,         img->w>>8,      img->w>>16,     img->w>>24,
         img->h,         img->h>>8,      img->h>>16,     img->h>>24,
@@ -208,12 +215,12 @@ void save_bmp(Image *img) {
     fwrite(bmpfileheader, 1, 14, f);
     fwrite(bmpinfoheader, 1, 40, f);
 
-    unsigned char padding[3] = {0,0,0};
+    const unsigned char padding[3] = {0,0,0};
     int padding_size = padded_row_size - img->w * 3;
 
     for (int y = img->h - 1; y >= 0; y -= 1) {
         for (int x = 0; x < img->w; x += 1) {
-            unsigned char color[3] = {
+            const unsigned char color[3] = {
                 img->pix[y][x].b,
                 img->pix[y][x].g,
                 img->pix[y][x].r
@@ -240,12 +247,20 @@ void write_img(Image *img, Expr *ptrn, int c) {
     }
 }
 
-int main() {
+void usage() {
+    printf("usage:");
+}
+
+int main(int argc, char *argv[]) {
+
+    /* seed the random functions */
     srand(time(NULL));
 
+    /* defaults */
     int c = rand() % 30;
-    int depth = depth_param(2, 4);
-    Expr *e = make_expr(depth);
+    int depth_val = 2;
+    int rand_val = 4;
+    int name_allocated = 0;
 
     Image out = {
         .w = 256,
@@ -253,11 +268,65 @@ int main() {
         .name = "bitty.bmp"
     };
 
+    /* declare and parse args */
+    static struct option long_options[] = {
+        {"width",   required_argument,  0,  'w'},
+        {"height",  required_argument,  0,  'i'},
+        {"depth",   required_argument,  0,  'd'},
+        {"random",  required_argument,  0,  'r'},
+        {"name",    required_argument,  0,  'n'},
+        {"help",    no_argument,        0,  'h'},
+        {0,         0,                  0,   0 },
+    };
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, "w:i:d:r:n:h", long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'w': out.w = atoi(optarg); break;
+            case 'i': out.h = atoi(optarg); break;
+            case 'd': depth_val = atoi(optarg); break;
+            case 'r': rand_val = atoi(optarg); break;
+            /* case 'n': out.name = optarg; break; */
+            case 'n':
+                {
+                    const char *ext = ".bmp";
+                    size_t len = strlen(optarg);
+                    size_t extlen = strlen(ext);
+                    if (len >= extlen && strcmp(optarg + len - extlen, ext) == 0) {
+                        out.name = optarg;
+                        name_allocated = 0;
+                    } else {
+                        out.name = malloc(len + extlen + 1);
+                        if (!out.name) {
+                            fprintf(stderr, "couldn't malloc filename\n");
+                            exit(1);
+                        }
+                        snprintf(out.name, len + extlen + 1, "%s%s", optarg, ext);
+                        name_allocated = 1;
+                    }
+                }
+                break;
+            case 'h': usage(); return 0;
+            default:
+                fprintf(stderr, "unknown option: -%c \n", optopt);
+                usage();
+                return 1;
+        }
+    }
+
+    /* do the image stuff */
+    int depth = depth_param(depth_val, rand_val);
+    Expr *e = make_expr(depth);
     alloc_pix(&out);
     write_img(&out, e, c);
     save_bmp(&out);
     free_pix(&out);
 
+    if (name_allocated) {
+        free(out.name);
+    }
+
+    /* print the expression */
     printf("expression: ");
     print_expr(e);
     printf("\nwhere c = %d\n", c);

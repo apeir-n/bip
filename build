@@ -2,15 +2,17 @@
 
 bindir="$HOME/.local/bin"
 os="$(uname)"
+sarg="$1"
+shift
 
 runner () {
     case "$os" in
         "Darwin")
-            ./bip
+            ./bip "$@"
             open *.bmp
             ;;
         *)
-            ./bip
+            ./bip "$@"
             if command -v nsxiv >/dev/null 2>&1; then
                 nsxiv --anti-alias=no *.bmp
             elif command -v feh >/dev/null 2>&1; then
@@ -42,46 +44,45 @@ cleaner () {
 }
 
 helper () {
-    printf "\n\033[94m  build [\033[4;92moptions\033[0;93m: run, install, clean, ... \033[0;94m]\033[0m\n"
-    printf "\n\033[96m  this script offers a simple way to compile, run, and install bip.\n"
-    printf "\n  \033[4;92moptions\033[0;96m:\n\n"
-    printf "      \033[94mbuild           \033[96m- with no options, \033[4;92mbuild\033[0;96m compiles the program, runs it, and opens the resulting image.\n"
+    printf "\n  \033[94mbuild [\033[4;92msubcommands\033[0;93m: run, install, clean, ... \033[0;94m]\033[96m\n\n"
+    printf "  this script offers a simple way to compile, run, and install bip.\n\n"
+    printf "  \033[4;92msubcommands\033[0;96m:\n\n"
+    printf "      \033[94mbuild \033[93mmake      \033[96m- compiles the program, runs it, and opens the resulting image.\n"
     printf "      \033[94mbuild \033[93mrun       \033[96m- runs the program and opens the resulting image (it must be compiled first).\n"
     printf "      \033[94mbuild \033[93minstall   \033[96m- moves \033[4;92mbip\033[0;96m and the \033[4;92mbop\033[0;96m script from here to the user's \033[4;92m~/.local/bin\033[0;96m directory.\n"
     printf "      \033[94mbuild \033[93muninstall \033[96m- removes \033[4;92mbip\033[0;96m and \033[4;92mbop\033[0;96m from the user's \033[4;92m~/.local/bin\033[0;96m directory.\n"
     printf "      \033[94mbuild \033[93mclean     \033[96m- removes the image files and binary from this directory.\n"
-    printf "      \033[94mbuild \033[93mhelp      \033[96m- displays this help message.\n"
+    printf "      \033[94mbuild \033[93mhelp      \033[96m- displays this help message.\n\n"
+    printf "  to pass cli args to \033[4;92mbip\033[0;96m itself, write them after the build script's subcommand.\n"
+    printf "  for instance, to change the name of the generated image file, run:\n\n"
+    printf "      \033[94m./build \033[93mmake \033[92m--name\033[94m=\033[91mboppajam.bmp\033[96m\n\n"
+    printf "  the \033[92m--name\033[96m flag will be passed to \033[4;92mbip\033[0;96m when \033[94m./build \033[93mmake\033[96m runs it, after it compiles it.\n  then it will automatically open your new boppajam.bmp file!\n"
+    printf "  to see a full list of \033[4;92mbip\033[0;96m's cli options, run \033[94m./build \033[93mrun \033[92m--help\033[96m, or just \033[94m./bip \033[92m--help\033[96m to call the binary directly.\n"
     printf "\n\033[0m"
 }
 
-case "$1" in
-    "")
+case "$sarg" in
+    "make")
         cc -o bip bip.c
-        runner
+        runner "$@"
         ;;
-
-    "run"       | "--run"       | "-r")
-        runner
+    "run")
+        runner "$@"
         ;;
-
-    "clean"     | "--clean"     | "-c")
+    "clean")
         cleaner
         ;;
-
-    "install"   | "--install"   | "-i")
+    "install")
         installer && cleaner || printf "couldn't complete install.\ntry installing manually by moving bip and bop into \033[4;92m~/.local/bin\033[0m or elsewhere in your \033[4;92m\$PATH.\033[0m\n"
         ;;
-
-    "uninstall" | "--uninstall" | "-u")
+    "uninstall")
         uninstaller
         ;;
-
-    "help"      | "--help"      | "-h")
+    "help")
         helper
         ;;
-
     *)
-        printf "unknown option: ${*}\n\nusage:\n"
+        printf "unknown option: $sarg\n\nusage:\n"
         helper
         ;;
 esac
