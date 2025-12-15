@@ -57,5 +57,7 @@ The script is called `build` and can be run with `./build make` in the root dire
   to see a full list, run ./build run --help, or just ./bip --help to call the binary directly.
 ```
 
+#### acknowledgements
+[bit](github.com/superstarryeyes/bit) - fucking awesome meta-font playground that i used in the help message
 
 This project was just an exercise for me while I try learning c. If you have advice for better programming practices or whatever, let me know.
