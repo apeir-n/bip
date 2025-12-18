@@ -268,7 +268,7 @@ void usage() {
     printf("      \033[93m--height, -i \033[95m<int> \033[91m(256)          \033[96m- height in pixels\n");
     printf("      \033[93m--depth,  -d \033[95m<int> \033[91m(2)            \033[96m- number of iterations in tree\n");
     printf("      \033[93m--random, -r \033[95m<int> \033[91m(4)            \033[96m- random offset to depth param\n");
-    printf("      \033[93m--name,   -n \033[95m<str> \033[91m(\"bitty.bmp\")  \033[96m- name of image file\n");
+    printf("      \033[93m--name,   -n \033[95m<str> \033[91m(\"bitty.bmp\")  \033[96m- name of output image file\n");
     printf("      \033[93m--help,   -h                      \033[96m- displays this help message\n\n");
     printf("  \033[4;92mexamples\033[0;96m:\n\n");
     printf("      \033[94mbip \033[93m--depth\033[94m=\033[91m4 \033[93m--random\033[94m=\033[91m0 \033[93m--name\033[94m=\033[91mboppajam\033[96m\n\n");
@@ -278,11 +278,12 @@ void usage() {
     printf("  this will generate a 1024x1024 size image that uses an expr with a minimum\n");
     printf("  recursion depth of 2, but can go much deeper with a high randomness level.\n\n");
     printf("  \033[4;92minfo\033[0;96m:\n");
+    printf("      - the image will be spit out into the directory from which \033[94mbip\033[96m was called\n");
     printf("      - the '.bmp' extension is automatically added to the filename\n");
-    printf("      - setting random to 0 will disable it\n");
     printf("      - depth can be thought of as the length and complexity of the expression\n");
     printf("      - random is added to depth, and the max recursion depth is given by the sum\n");
-    printf("          - i.e., if depth=3 and random=2, the recursion depth min=3 and max=5\n\n");
+    printf("          - i.e., if depth=3 and random=2, the recursion depth min=3 and max=5\n");
+    printf("      - setting random to 0 will disable it, so all exprs will be the same length\n\n");
     printf("  for more details on how the recursive tree structure works, see:\n");
     printf("  \033[95mhttps://github.com/apeir-n/bip/blob/master/README.md\033[0m\n");
 }
@@ -322,9 +323,9 @@ int main(int argc, char *argv[]) {
             case 'i': out.h = atoi(optarg); break;
             case 'd': depth_val = atoi(optarg); break;
             case 'r': rand_val = atoi(optarg); break;
-            /* case 'n': out.name = optarg; break; */
             case 'n':
                 {
+                    /* find the correct size to allocate depending on whether '.bmp' extension was added from cli */
                     const char *ext = ".bmp";
                     size_t len = strlen(optarg);
                     size_t extlen = strlen(ext);
