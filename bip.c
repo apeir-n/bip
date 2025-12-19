@@ -220,11 +220,11 @@ void save_bmp(Image *img) {
     fclose(f);
 }
 
-void write_img(Image *img, Expr *ptrn, int c) {
+void write_img(Image *img, Expr *ptrn, int c, int thresh) {
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
             int val = eval_expr(ptrn, x, y, c);
-            int thresh = 5;
+            /* int val = (((x | y) | (x | x)) ^ ((x << y) ^ (x ^ y))); */
 
             if (val % 256 > thresh) {
                 img->pix[y][x] = (Pixel){0xff, 0xff, 0xff};
@@ -256,6 +256,7 @@ void usage() {
     printf("      \033[93m--height, -i \033[95m<int> \033[91m(256)          \033[96m- height in pixels\n");
     printf("      \033[93m--depth,  -d \033[95m<int> \033[91m(2)            \033[96m- number of iterations in tree\n");
     printf("      \033[93m--random, -r \033[95m<int> \033[91m(4)            \033[96m- random offset to depth param\n");
+    printf("      \033[93m--thresh, -t \033[95m<int> \033[91m(5)            \033[96m- threshold for white/black pixels\n");
     printf("      \033[93m--name,   -n \033[95m<str> \033[91m(\"bitty.bmp\")  \033[96m- name of output image file\n");
     printf("      \033[93m--help,   -h                      \033[96m- displays this help message\n\n");
     printf("  \033[4;92mexamples\033[0;96m:\n\n");
@@ -285,6 +286,7 @@ int main(int argc, char *argv[]) {
     int c = rand() % 30;
     int depth = 2;
     int random = 4;
+    int thresh = 5;
     int size = 256;
     int name_allocated = 0;
 
@@ -300,6 +302,7 @@ int main(int argc, char *argv[]) {
         {"height",  required_argument,  0,  'i'},
         {"depth",   required_argument,  0,  'd'},
         {"random",  required_argument,  0,  'r'},
+        {"thresh",  required_argument,  0,  't'},
         {"name",    required_argument,  0,  'n'},
         {"help",    no_argument,        0,  'h'},
         {0,         0,                  0,   0 },
@@ -312,6 +315,7 @@ int main(int argc, char *argv[]) {
             case 'i': out.h = clip(atoi(optarg), 16, 8192); break;
             case 'd': depth = clip(atoi(optarg), 2, 12); break;
             case 'r': random = clip(atoi(optarg), 0, 6); break;
+            case 't': thresh = clip(atoi(optarg), 1, 255); break;
             case 'n':
                 {
                     /* sanitize */
@@ -349,7 +353,7 @@ int main(int argc, char *argv[]) {
     int randepth = depth + (random > 0 ? rand() % random : 0);
     Expr *e = make_expr(randepth);
     alloc_pix(&out);
-    write_img(&out, e, c);
+    write_img(&out, e, c, thresh);
     save_bmp(&out);
     free_pix(&out);
 
