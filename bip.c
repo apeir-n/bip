@@ -50,22 +50,10 @@ typedef struct {
     Pixel **pix;
 } Image;
 
-int depth_param(int depth, int random) {
-
-    /* 
-     * depth = 1       only returns 1 leaf:            a
-     * depth = 2       returns 1 branch:               (a ? b)
-     * depth = 3       returns 3 branches, 4 leaves:   ((a ? b) ? (c ? d))
-     * depth = 4       returns 7 branches, 8 leaves:   (((a ? b) ? (c ? d)) ? ((e ? f) ? (g ? h)))
-     * 
-     * here the depth is minimized at 2, and randomness is optionally added to increase the number
-     * iterations (branches). random is maxed at 4, and if it's zero, then the same number of branches
-     * are made each time the expression is generated.
-     */
-
-    if (depth < 2) depth = 2;
-    if (random > 6) random = 6;
-    return depth + (random > 0 ? rand() % random : 0);
+int clip(int val, int min, int max) {
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
 }
 
 Expr *make_expr(int depth) {
@@ -76,8 +64,8 @@ Expr *make_expr(int depth) {
         exit(1);
     }
 
+    /* base case: make a leaf */
     if (depth <= 1) {
-        /* base case: make a leaf */
         e->kind = EXPR_VAL;
         e->val_expr = rand() % 3;
         return e;
@@ -295,13 +283,14 @@ int main(int argc, char *argv[]) {
 
     /* defaults */
     int c = rand() % 30;
-    int depth_val = 2;
-    int rand_val = 4;
+    int depth = 2;
+    int random = 4;
+    int size = 256;
     int name_allocated = 0;
 
     Image out = {
-        .w = 256,
-        .h = 256,
+        .w = size,
+        .h = size,
         .name = "bitty.bmp"
     };
 
@@ -319,12 +308,17 @@ int main(int argc, char *argv[]) {
     int opt;
     while ((opt = getopt_long(argc, argv, "w:i:d:r:n:h", long_options, NULL)) != -1) {
         switch (opt) {
-            case 'w': out.w = atoi(optarg); break;
-            case 'i': out.h = atoi(optarg); break;
-            case 'd': depth_val = atoi(optarg); break;
-            case 'r': rand_val = atoi(optarg); break;
+            case 'w': out.w = clip(atoi(optarg), 16, 8192); break;
+            case 'i': out.h = clip(atoi(optarg), 16, 8192); break;
+            case 'd': depth = clip(atoi(optarg), 2, 12); break;
+            case 'r': random = clip(atoi(optarg), 0, 6); break;
             case 'n':
                 {
+                    /* sanitize */
+                    if (!optarg || strlen(optarg) == 0) { fprintf(stderr, "filename can't be empty\n"); exit(1); }
+                    if (strstr(optarg, "/") || strstr(optarg, "..")) { fprintf(stderr, "filename can't include a / or ..\n"); exit(1); }
+                    if (strlen(optarg) > 240) { fprintf(stderr, "filename is too long\n"); exit(1); }
+
                     /* find the correct size to allocate depending on whether '.bmp' extension was added from cli */
                     const char *ext = ".bmp";
                     size_t len = strlen(optarg);
@@ -345,15 +339,15 @@ int main(int argc, char *argv[]) {
                 break;
             case 'h': usage(); return 0;
             default:
-                fprintf(stderr, "unknown option: -%c \n", optopt);
+                printf("usage:\n");
                 usage();
                 return 1;
         }
     }
 
     /* do the image stuff */
-    int depth = depth_param(depth_val, rand_val);
-    Expr *e = make_expr(depth);
+    int randepth = depth + (random > 0 ? rand() % random : 0);
+    Expr *e = make_expr(randepth);
     alloc_pix(&out);
     write_img(&out, e, c);
     save_bmp(&out);

@@ -9,13 +9,14 @@ ideas
 - maybe also `int thresh`
 - come up with a framework for coloring
 - later filetype (bmp, xpm, png maybe)
+- output dir
 
 ### todo
 - [x] better expr generation
     - [ ] more constants
 - [/] parameterization
 - [ ] xpm
-- [ ] input sanitization
+- [x] input sanitization
 - [ ] understand threshold better
 - [ ] figure out good algorithms for coloring
 - [ ] figure out user input for expressions
