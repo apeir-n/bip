@@ -5,20 +5,26 @@ os="$(uname)"
 sarg="$1"
 shift
 
+finder () {
+    find . -maxdepth 1 -type f \( -iname '*.bmp' -o -iname '*.xpm' \)
+}
+
 runner () {
+    ./bip "$@"
+
+    images=$(finder)
+
     case "$os" in
         "Darwin")
-            ./bip "$@"
-            open *.bmp
+            open $images
             ;;
         *)
-            ./bip "$@"
             if command -v nsxiv >/dev/null 2>&1; then
-                nsxiv --anti-alias=no *.bmp
+                nsxiv --anti-alias=no $images
             elif command -v feh >/dev/null 2>&1; then
-                feh --force-aliasing *.bmp
+                feh --force-aliasing $images
             else
-                xdg-open *.bmp
+                xdg-open $images
             fi
             ;;
     esac
@@ -36,7 +42,8 @@ uninstaller () {
 }
 
 cleaner () {
-    rm *.bmp bip >/dev/null 2>&1
+    finder | xargs rm -f
+    rm bip
 }
 
 helper () {
@@ -51,7 +58,7 @@ helper () {
     printf "      \033[94mbuild \033[93mhelp      \033[96m- displays this help message.\n\n"
     printf "  to pass cli args to \033[4;92mbip\033[0;96m itself, write them after the build script's subcommand.\n"
     printf "  for instance, to change the name of the generated image file, run:\n\n"
-    printf "      \033[94m./build \033[93mmake \033[92m--name\033[94m=\033[91mboppajam.bmp\033[96m\n\n"
+    printf "      \033[94m./build \033[93mmake \033[92m--name\033[94m=\033[91mboppajam\033[96m\n\n"
     printf "  the \033[92m--name\033[96m flag will be passed to \033[4;92mbip\033[0;96m when \033[94m./build \033[93mmake\033[96m runs it, after it compiles it.\n  then it will automatically open your new \033[91mboppajam.bmp\033[96m file!\n"
     printf "  to see a full list of \033[4;92mbip\033[0;96m's cli options, run \033[94m./build \033[93mrun \033[92m--help\033[96m, or just \033[94m./bip \033[92m--help\033[96m to call the binary directly.\n"
     printf "\n\033[0m"
@@ -59,8 +66,8 @@ helper () {
 
 case "$sarg" in
     "make")
-        cc -o bip bip.c
-        runner "$@"
+        cc -o bip bip.c \
+            && runner "$@"
         ;;
     "run")
         runner "$@"
@@ -69,7 +76,9 @@ case "$sarg" in
         cleaner
         ;;
     "install")
-        installer && cleaner || printf "couldn't complete install.\ntry installing manually by moving bip and bop into \033[4;92m~/.local/bin\033[0m or elsewhere in your \033[4;92m\$PATH.\033[0m\n"
+        installer       \
+            && cleaner  \
+            || printf "couldn't complete install.\ntry installing manually by moving bip and bop into \033[4;92m~/.local/bin\033[0m or elsewhere in your \033[4;92m\$PATH.\033[0m\n"
         ;;
     "uninstall")
         uninstaller

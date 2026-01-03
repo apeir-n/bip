@@ -156,6 +156,11 @@ void free_expr(Expr *e) {
     free(e);
 }
 
+int black_pix(Pixel p) {
+    /* test if pixel is black for xpm function */
+    return p.r == 0x00 && p.g == 0x00 && p.b == 0x00;
+}
+
 void alloc_pix(Image *img) {
     img->pix = malloc(img->h * sizeof(Pixel *));
     if (!img->pix) {
@@ -176,6 +181,21 @@ void free_pix(Image *img) {
         free(img->pix[i]);
     }
     free(img->pix);
+}
+
+void write_img(Image *img, Expr *e, int c, int thresh) {
+    for (int y = 0; y < img->h; y += 1) {
+        for (int x = 0; x < img->w; x += 1) {
+            int val = eval_expr(e, x, y, c);
+            /* int val = (((x | y) | (x | x)) ^ ((x << y) ^ (x ^ y))); */
+
+            if (val % 256 > thresh) {
+                img->pix[y][x] = (Pixel){0xff, 0xff, 0xff};
+            } else {
+                img->pix[y][x] = (Pixel){0x00, 0x00, 0x00};
+            }
+        }
+    }
 }
 
 void save_bmp(Image *img) {
@@ -231,19 +251,38 @@ void save_bmp(Image *img) {
     fclose(f);
 }
 
-void write_img(Image *img, Expr *ptrn, int c, int thresh) {
-    for (int y = 0; y < img->h; y += 1) {
-        for (int x = 0; x < img->w; x += 1) {
-            int val = eval_expr(ptrn, x, y, c);
-            /* int val = (((x | y) | (x | x)) ^ ((x << y) ^ (x ^ y))); */
+void save_xpm(Image *img) {
+    FILE *f = fopen(img->name, "w");
+    if (!f) {
+        fprintf(stderr, "couldn't open file %s for writing 🙈💩💥\n", img->name);
+        exit(1);
+    }
 
-            if (val % 256 > thresh) {
-                img->pix[y][x] = (Pixel){0xff, 0xff, 0xff};
+    fprintf(f, "/* XPM */\n");
+    fprintf(f, "static const char *image[] = {\n");
+    fprintf(f, "\"%d %d 2 1\",\n", img->h, img->w);
+    fprintf(f, "\". c #000000\",\n");
+    fprintf(f, "\"  c #ffffff\",\n");
+
+    for (int y = 0; y < img->h; y += 1) {
+        fprintf(f, "\"");
+        for (int x = 0; x < img->w; x += 1) {
+            const unsigned char color[3] = {
+                img->pix[y][x].r,
+                img->pix[y][x].g,
+                img->pix[y][x].b,
+            };
+
+            if (black_pix(img->pix[y][x])) {
+                fputc('.', f);
             } else {
-                img->pix[y][x] = (Pixel){0x00, 0x00, 0x00};
+                fputc(' ', f);
             }
         }
+        fprintf(f, "\",\n");
     }
+    fprintf(f, "};\n");
+    fclose(f);
 }
 
 void usage() {
@@ -268,18 +307,19 @@ void usage() {
     printf("      \033[93m--depth,  -d \033[95m<int> \033[91m(2)            \033[96m- number of iterations in tree\n");
     printf("      \033[93m--random, -r \033[95m<int> \033[91m(4)            \033[96m- random offset to depth param\n");
     printf("      \033[93m--thresh, -t \033[95m<int> \033[91m(5)            \033[96m- threshold for white/black pixels\n");
+    printf("      \033[93m--xpm,    -x                      \033[96m- generates a .xpm file instead of .bmp\n");
     printf("      \033[93m--name,   -n \033[95m<str> \033[91m(\"bitty.bmp\")  \033[96m- name of output image file\n");
     printf("      \033[93m--help,   -h                      \033[96m- displays this help message\n\n");
     printf("  \033[4;92mexamples\033[0;96m:\n\n");
     printf("      \033[94mbip \033[93m--depth\033[94m=\033[91m4 \033[93m--random\033[94m=\033[91m0 \033[93m--name\033[94m=\033[91mboppajam\033[96m\n\n");
     printf("  this will generate an image named 'boppajam.bmp' using an expression\n");
     printf("  that's always the same length, at a recursion depth of 4.\n\n");
-    printf("      \033[94mbip \033[93m-d \033[91m2 \033[93m-r \033[91m6 \033[93m-w \033[91m1024 \033[93m-h \033[91m1024\033[96m\n\n");
-    printf("  this will generate a 1024x1024 size image that uses an expr with a minimum\n");
+    printf("      \033[94mbip \033[93m-d \033[91m2 \033[93m-r \033[91m6 \033[93m-w \033[91m1024 \033[93m-i \033[91m1024\033[96m \033[93m-x\n\n");
+    printf("  this will generate a 1024x1024 size XPM that uses an expr with a minimum\n");
     printf("  recursion depth of 2, but can go much deeper with a high randomness level.\n\n");
     printf("  \033[4;92minfo\033[0;96m:\n");
     printf("      - the image will be spit out into the directory from which \033[94mbip\033[96m was called\n");
-    printf("      - the '.bmp' extension is automatically added to the filename\n");
+    printf("      - the file extension (.bmp or .xpm) is automatically added to the filename\n");
     printf("      - depth can be thought of as the length and complexity of the expression\n");
     printf("      - random is added to depth, and the max recursion depth is given by the sum\n");
     printf("          - i.e., if depth=3 and random=2, the recursion depth min=3 and max=5\n");
@@ -300,11 +340,12 @@ int main(int argc, char *argv[]) {
     int thresh = 5;
     int size = 256;
     int name_allocated = 0;
+    int name_provided = 0;
+    int xpm = 0;
 
     Image out = {
         .w = size,
         .h = size,
-        .name = "bitty.bmp"
     };
 
     /* declare and parse args */
@@ -315,32 +356,34 @@ int main(int argc, char *argv[]) {
         {"random",  required_argument,  0,  'r'},
         {"thresh",  required_argument,  0,  't'},
         {"name",    required_argument,  0,  'n'},
+        {"xpm",     no_argument,        0,  'x'},
         {"help",    no_argument,        0,  'h'},
         {0,         0,                  0,   0 },
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "w:i:d:r:n:h", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "w:i:d:r:t:n:xh", long_options, NULL)) != -1) {
         switch (opt) {
             case 'w': out.w = clip(atoi(optarg), 16, 8192); break;
             case 'i': out.h = clip(atoi(optarg), 16, 8192); break;
             case 'd': depth = clip(atoi(optarg), 2, 12); break;
             case 'r': random = clip(atoi(optarg), 0, 6); break;
             case 't': thresh = clip(atoi(optarg), 1, 255); break;
+            case 'x': xpm = 1; break;
             case 'n':
                 {
-                    /* sanitize */
+                    /* sanitize name input */
                     if (!optarg || strlen(optarg) == 0) { fprintf(stderr, "filename can't be empty\n"); exit(1); }
                     if (strstr(optarg, "/") || strstr(optarg, "..")) { fprintf(stderr, "filename can't include a / or ..\n"); exit(1); }
                     if (strlen(optarg) > 240) { fprintf(stderr, "filename is too long\n"); exit(1); }
 
-                    /* find the correct size to allocate depending on whether '.bmp' extension was added from cli */
-                    const char *ext = ".bmp";
+                    const char *ext = xpm ? ".xpm" : ".bmp";
                     size_t len = strlen(optarg);
                     size_t extlen = strlen(ext);
+
+                    /* if the user gives a file extension, copy it; else add it in (according to filetype from xpm ternary above) */
                     if (len >= extlen && strcmp(optarg + len - extlen, ext) == 0) {
-                        out.name = optarg;
-                        name_allocated = 0;
+                        out.name = strdup(optarg);
                     } else {
                         out.name = malloc(len + extlen + 1);
                         if (!out.name) {
@@ -348,8 +391,9 @@ int main(int argc, char *argv[]) {
                             exit(1);
                         }
                         snprintf(out.name, len + extlen + 1, "%s%s", optarg, ext);
-                        name_allocated = 1;
                     }
+                    name_allocated = 1;
+                    name_provided = 1;
                 }
                 break;
             case 'h': usage(); return 0;
@@ -360,17 +404,31 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* note to self: auto detect filetype from ext passed? */
+    if (!name_provided) {
+        out.name = strdup(xpm ? "bitty.xpm" : "bitty.bmp");
+        if (!out.name) {
+            fprintf(stderr, "couldn't allocate default name\n");
+            exit(1);
+        }
+        name_allocated = 1;
+    }
+
     /* do the image stuff */
     int randepth = depth + (random > 0 ? rand() % random : 0);
     Expr *e = make_expr(randepth);
     alloc_pix(&out);
     write_img(&out, e, c, thresh);
-    save_bmp(&out);
+
+    if (xpm)
+        save_xpm(&out);
+    else
+        save_bmp(&out);
+
     free_pix(&out);
 
-    if (name_allocated) {
+    if (name_allocated)
         free(out.name);
-    }
 
     /* print the expression */
     printf("expression: ");

@@ -5,20 +5,26 @@
 
 os="$(uname)"
 
+finder () {
+    find . -maxdepth 1 -type f \( -iname '*.bmp' -o -iname '*.xpm' \)
+}
+
 runner () {
+    ./bip "$@"
+
+    images=$(finder)
+
     case "$os" in
         "Darwin")
-            bip "$@"
-            open *.bmp
+            open $images
             ;;
         *)
-            bip "$@"
             if command -v nsxiv >/dev/null 2>&1; then
-                nsxiv --anti-alias=no *.bmp
+                nsxiv --anti-alias=no $images
             elif command -v feh >/dev/null 2>&1; then
-                feh --force-aliasing *.bmp
+                feh --force-aliasing $images
             else
-                xdg-open *.bmp
+                xdg-open $images
             fi
             ;;
     esac
