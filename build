@@ -6,25 +6,32 @@ sarg="$1"
 shift
 
 finder () {
-    find . -maxdepth 1 -type f \( -iname '*.bmp' -o -iname '*.xpm' \)
+    case "$1" in
+        bmp) find . -maxdepth 1 -type f -iname '*.bmp' ;;
+        xpm) find . -maxdepth 1 -type f -iname '*.xpm' ;;
+        *) find . -maxdepth 1 -type f \( -iname '*.bmp' -o -iname '*.xpm' \) ;;
+    esac
 }
 
 runner () {
     ./bip "$@"
-
-    images=$(finder)
-
     case "$os" in
         "Darwin")
-            open $images
+            bmps="$(finder bmp)"
+            xpms="$(finder xpm)"
+            [ -n "$bmps" ] && open "$bmps"
+            [ -n "$xpms" ] && {
+                ${EDITOR:-vim} "$xpms" || open -a TextEdit "$xpms"
+            }
             ;;
         *)
+            images="$(finder)"
             if command -v nsxiv >/dev/null 2>&1; then
-                nsxiv --anti-alias=no $images
+                nsxiv --anti-alias=no "$images"
             elif command -v feh >/dev/null 2>&1; then
-                feh --force-aliasing $images
+                feh --force-aliasing "$images"
             else
-                xdg-open $images
+                xdg-open "$images"
             fi
             ;;
     esac
@@ -50,17 +57,23 @@ helper () {
     printf "\n  \033[94mbuild [\033[4;92msubcommands\033[0;93m: run, install, clean, ... \033[0;94m]\033[96m\n\n"
     printf "  this script offers a simple way to compile, run, and install bip.\n\n"
     printf "  \033[4;92msubcommands\033[0;96m:\n\n"
-    printf "      \033[94mbuild \033[93mmake      \033[96m- compiles the program, runs it, and opens the resulting image.\n"
-    printf "      \033[94mbuild \033[93mrun       \033[96m- runs the program and opens the resulting image (it must be compiled first).\n"
-    printf "      \033[94mbuild \033[93minstall   \033[96m- moves \033[4;92mbip\033[0;96m and the \033[4;92mbop\033[0;96m script from here to the user's \033[4;92m~/.local/bin\033[0;96m directory.\n"
-    printf "      \033[94mbuild \033[93muninstall \033[96m- removes \033[4;92mbip\033[0;96m and \033[4;92mbop\033[0;96m from the user's \033[4;92m~/.local/bin\033[0;96m directory.\n"
-    printf "      \033[94mbuild \033[93mclean     \033[96m- removes the image files and binary from this directory.\n"
-    printf "      \033[94mbuild \033[93mhelp      \033[96m- displays this help message.\n\n"
+    printf "      \033[94mbuild \033[93mmake      \033[96m- compiles the program, runs it, and opens the resulting image\n"
+    printf "      \033[94mbuild \033[93mrun       \033[96m- runs the program & opens the resulting image (must be compiled)\n"
+    printf "      \033[94mbuild \033[93minstall   \033[96m- moves \033[4;92mbip\033[0;96m and the \033[4;92mbop\033[0;96m script to \033[4;92m~/.local/bin\033[0;96m and runs \033[94mbuild \033[93mclean\033[96m\n"
+    printf "      \033[94mbuild \033[93muninstall \033[96m- removes \033[4;92mbip\033[0;96m and \033[4;92mbop\033[0;96m from \033[4;92m~/.local/bin\033[0;96m\n"
+    printf "      \033[94mbuild \033[93mclean     \033[96m- removes the image files and binary from this directory\n"
+    printf "      \033[94mbuild \033[93mhelp      \033[96m- displays this help message\n\n"
     printf "  to pass cli args to \033[4;92mbip\033[0;96m itself, write them after the build script's subcommand.\n"
     printf "  for instance, to change the name of the generated image file, run:\n\n"
     printf "      \033[94m./build \033[93mmake \033[92m--name\033[94m=\033[91mboppajam\033[96m\n\n"
-    printf "  the \033[92m--name\033[96m flag will be passed to \033[4;92mbip\033[0;96m when \033[94m./build \033[93mmake\033[96m runs it, after it compiles it.\n  then it will automatically open your new \033[91mboppajam.bmp\033[96m file!\n"
-    printf "  to see a full list of \033[4;92mbip\033[0;96m's cli options, run \033[94m./build \033[93mrun \033[92m--help\033[96m, or just \033[94m./bip \033[92m--help\033[96m to call the binary directly.\n"
+    printf "  the \033[92m--name\033[96m flag will be passed to \033[4;92mbip\033[0;96m when \033[94m./build \033[93mmake\033[96m runs it, after it compiles it.\n"
+    printf "  then it will automatically open your silly new \033[91mboppajam.bmp\033[96m file!\n"
+    printf "  to see a full list of \033[4;92mbip\033[0;96m's cli options, run \033[94m./build \033[93mrun \033[92m--help\033[96m, or just \033[94m./bip \033[92m--help\033[96m\n"
+    printf "  to call the binary directly, after it's been compiled.\n\n"
+    printf "  this distribution also comes with a script called \033[4;92mbop\033[0;96m. it takes the part of this script\n"
+    printf "  that runs \033[4;92mbip\033[0;96m and opens the resulting file, and also lets you convert the image file.\n"
+    printf "  for more information, see the README in this directory, or at:\n\n"
+    printf "  \033[95mhttps://github.com/apeir-n/bip/blob/master/README.md\033[0m\n";
     printf "\n\033[0m"
 }
 

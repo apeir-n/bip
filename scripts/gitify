@@ -5,4 +5,4 @@ os="$(uname)"
 
 git add .
 git commit -m "[ ${*} ][ $(date '+%a_%y%m%d ][ %I:%M%p' | tr '[:upper:]' '[:lower:]') ][ $USER ]"
-git push -u origin master
+git push

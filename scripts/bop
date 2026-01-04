@@ -1,33 +1,67 @@
 #!/bin/sh
 
-#############################################################
-## bip - algorithmic image generator           B. R. Shellito 
+############################################################
+## bip - algorithmic image generator       B. R. Shellito ##
+##                                                        ##
+##                                                        ##
+## BSD 2-Clause License                                   ##
+############################################################
 
 os="$(uname)"
 
 finder () {
-    find . -maxdepth 1 -type f \( -iname '*.bmp' -o -iname '*.xpm' \)
+    case "$1" in
+        bmp) find . -maxdepth 1 -type f -iname '*.bmp' ;;
+        xpm) find . -maxdepth 1 -type f -iname '*.xpm' ;;
+        *) find . -maxdepth 1 -type f \( -iname '*.bmp' -o -iname '*.xpm' \) ;;
+    esac
+}
+
+converter () {
+    ext="$1"
+    [ -z "$(finder)" ] && printf "\033[94mno images found to convert\033[0m\n" && exit 1
+
+    finder | while IFS= read -r img; do
+        base="$(basename "$img" | sed 's/\.[^.]*$//')"
+        out="$base.$ext"
+
+        if command -v magick >/dev/null 2>&1; then
+            magick "$img" "$out" && printf "\033[94mconverted \033[3;92m%s\033[0;94m -> \033[3;92m%s\033[0m\n" "$img" "$out"
+        elif command -v convert >/dev/null 2>&1; then
+            convert "$img" "$out" && printf "\033[94mconverted \033[3;92m%s\033[0;94m -> \033[3;92m%s\033[0m\n" "$img" "$out"
+        else
+            printf "\033[3;94mimage magick needs to be installed for this feature!\033[0m\n"
+        fi
+    done
 }
 
 runner () {
-    ./bip "$@"
-
-    images=$(finder)
-
+    bip "$@"
     case "$os" in
         "Darwin")
-            open $images
+            bmps="$(finder bmp)"
+            xpms="$(finder xpm)"
+            [ -n "$bmps" ] && open "$bmps"
+            [ -n "$xpms" ] && {
+                ${EDITOR:-vim} "$xpms" || open -a TextEdit "$xpms"
+            }
             ;;
         *)
+            images="$(finder)"
             if command -v nsxiv >/dev/null 2>&1; then
-                nsxiv --anti-alias=no $images
+                nsxiv --anti-alias=no "$images"
             elif command -v feh >/dev/null 2>&1; then
-                feh --force-aliasing $images
+                feh --force-aliasing "$images"
             else
-                xdg-open $images
+                xdg-open "$images"
             fi
             ;;
     esac
 }
+
+if [ "$1" = "convert" ] && [ -n "$2" ]; then
+    converter "$2"
+    exit
+fi
 
 runner "$@"
