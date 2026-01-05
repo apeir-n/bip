@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+/* types & enums */
 enum Operator {
     OP_ADD,
     OP_SUB,
@@ -38,29 +40,31 @@ typedef struct Expr {
     };
 } Expr;
 
-int depth_param(int depth, int random) {
+/* function declarations */
+int clip(int val, int min, int max);
+Expr *make_expr(int depth);
+int eval_expr(Expr *e, int x, int y, int c);
+char *str_expr(Expr *e);
+void app_expr(Expr *e, char *buf, size_t size);
+void free_expr(Expr *e);
 
-    /* 
-     * depth = 1       only returns 1 leaf:            a
-     * depth = 2       returns 1 branch:               (a ? b)
-     * depth = 3       returns 3 branches, 4 leaves:   ((a ? b) ? (c ? d))
-     * depth = 4       returns 7 branches, 8 leaves:   (((a ? b) ? (c ? d)) ? ((e ? f) ? (g ? h)))
-     * 
-     * here the depth is minimized at 2, and randomness is optionally added to increase the number
-     * iterations (branches). random is maxed at 4, and if it's zero, then the same number of branches
-     * are made each time the expression is generated.
-     */
-
-    if (depth < 2) depth = 2;
-    if (random > 4) random = 4;
-    return depth + (random > 0 ? rand() % random : 0);
+/* function implementations */
+int clip(int val, int min, int max) {
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
 }
 
 Expr *make_expr(int depth) {
     Expr *e = malloc(sizeof(Expr));
 
+    if (!e) {
+        fprintf(stderr, "couldn't malloc expression 🙈💩💥\n");
+        exit(1);
+    }
+
+    /* base case: make a leaf */
     if (depth <= 1) {
-        /* base case: make a leaf */
         e->kind = EXPR_VAL;
         e->val_expr = rand() % 3;
         return e;
@@ -102,7 +106,7 @@ int eval_expr(Expr *e, int x, int y, int c) {
     }
 }
 
-void print_expr(Expr *e) {
+/* void print_expr(Expr *e) {
     if (e->kind == EXPR_VAL) {
         switch (e->val_expr) {
             case VAR_X: printf("x"); break;
@@ -130,6 +134,47 @@ void print_expr(Expr *e) {
 
     print_expr(e->op_expr.r);
     printf(")");
+} */
+
+/* make buffer for expr string */
+char *str_expr(Expr *e) {
+    char *buf = malloc(1024);
+    if (!buf) return NULL;
+    buf[0] = '\0';
+
+    app_expr(e, buf, 1024);
+    return buf;
+}
+
+/* append strings to buffer */
+void app_expr(Expr *e, char *buf, size_t size) {
+    if (e->kind == EXPR_VAL) {
+        const char *var =
+            (e->val_expr == VAR_X) ? "x" :
+            (e->val_expr == VAR_Y) ? "y" :
+            (e->val_expr == VAR_C) ? "c" : "?";
+        strncat(buf, var, size - strlen(buf) - 1);
+        return;
+    }
+
+    strncat(buf, "(", size - strlen(buf) - 1);
+    app_expr(e->op_expr.l, buf, size);
+
+    const char *op =
+        (e->op_expr.op == OP_ADD) ? " + " :
+        (e->op_expr.op == OP_SUB) ? " - " :
+        (e->op_expr.op == OP_MUL) ? " * " :
+        (e->op_expr.op == OP_DIV) ? " / " :
+        (e->op_expr.op == OP_MOD) ? " % " :
+        (e->op_expr.op == OP_AND) ? " & " :
+        (e->op_expr.op == OP_OOR) ? " | " :
+        (e->op_expr.op == OP_XOR) ? " ^ " :
+        (e->op_expr.op == OP_SHL) ? " << " :
+        (e->op_expr.op == OP_SHR) ? " >> " : " ? ";
+    strncat(buf, op, size - strlen(buf) - 1);
+
+    app_expr(e->op_expr.r, buf, size);
+    strncat(buf, ")", size - strlen(buf) - 1);
 }
 
 void free_expr(Expr *e) {
@@ -141,13 +186,29 @@ void free_expr(Expr *e) {
 }
 
 int main() {
+    /* seed the random functions */
     srand(time(NULL));
 
-    Expr *e = make_expr(depth_param(2, 4));
-    printf("expression: ");
-    print_expr(e);
-    printf("\n");
+    /* defaults */
+    int c = rand() % 30;
+    int depth = 2;
+    int random = 4;
+    int randepth = depth + (random > 0 ? rand() % random : 0);
+    Expr *e = make_expr(randepth);
+
+    char *expr_str = str_expr(e);
+    if (!expr_str) return 1;
+
+    printf("expr: %s\n", expr_str);
+    printf("where c = %d\n", c);
+
+    free(expr_str);
     free_expr(e);
+
+    /* printf("expression: ");
+    print_expr(e);
+    printf("\nwhere c = %d\n", c);
+    free_expr(e); */
 
     return 0;
 }

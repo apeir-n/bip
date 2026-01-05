@@ -15,6 +15,7 @@
 #include <getopt.h>
 #include <string.h>
 
+/* types & enums */
 enum Operator {
     OP_ADD,
     OP_SUB,
@@ -61,6 +62,22 @@ typedef struct {
     Pixel **pix;
 } Image;
 
+/* function declarations */
+int clip(int val, int min, int max);
+Expr *make_expr(int depth);
+int eval_expr(Expr *e, int x, int y, int c);
+char *str_expr(Expr *e);
+void app_expr(Expr *e, char *buf, size_t size);
+void free_expr(Expr *e);
+int black_pix(Pixel p);
+void alloc_pix(Image *img);
+void free_pix(Image *img);
+void write_img(Image *img, Expr *e, int c, int thresh);
+void save_bmp(Image *img);
+void save_xpm(Image *img, char *expr_str, int c);
+void usage(void);
+
+/* function implementations */
 int clip(int val, int min, int max) {
     if (val < min) return min;
     if (val > max) return max;
@@ -118,34 +135,45 @@ int eval_expr(Expr *e, int x, int y, int c) {
     }
 }
 
-void print_expr(Expr *e) {
+/* make buffer for expr string */
+char *str_expr(Expr *e) {
+    char *buf = malloc(1024);
+    if (!buf) return NULL;
+    buf[0] = '\0';
+
+    app_expr(e, buf, 1024);
+    return buf;
+}
+
+/* append strings to buffer */
+void app_expr(Expr *e, char *buf, size_t size) {
     if (e->kind == EXPR_VAL) {
-        switch (e->val_expr) {
-            case VAR_X: printf("x"); break;
-            case VAR_Y: printf("y"); break;
-            case VAR_C: printf("c"); break;
-        }
+        const char *var =
+            (e->val_expr == VAR_X) ? "x" :
+            (e->val_expr == VAR_Y) ? "y" :
+            (e->val_expr == VAR_C) ? "c" : "?";
+        strncat(buf, var, size - strlen(buf) - 1);
         return;
     }
-    
-    printf("(");
-    print_expr(e->op_expr.l);
 
-    switch (e->op_expr.op) {
-        case OP_ADD: printf(" + ");  break;
-        case OP_SUB: printf(" - ");  break;
-        case OP_MUL: printf(" * ");  break;
-        case OP_DIV: printf(" / ");  break;
-        case OP_MOD: printf(" %% "); break;
-        case OP_AND: printf(" & ");  break;
-        case OP_OOR: printf(" | ");  break;
-        case OP_XOR: printf(" ^ ");  break;
-        case OP_SHL: printf(" << "); break;
-        case OP_SHR: printf(" >> "); break;
-    }
+    strncat(buf, "(", size - strlen(buf) - 1);
+    app_expr(e->op_expr.l, buf, size);
 
-    print_expr(e->op_expr.r);
-    printf(")");
+    const char *op =
+        (e->op_expr.op == OP_ADD) ? " + " :
+        (e->op_expr.op == OP_SUB) ? " - " :
+        (e->op_expr.op == OP_MUL) ? " * " :
+        (e->op_expr.op == OP_DIV) ? " / " :
+        (e->op_expr.op == OP_MOD) ? " % " :
+        (e->op_expr.op == OP_AND) ? " & " :
+        (e->op_expr.op == OP_OOR) ? " | " :
+        (e->op_expr.op == OP_XOR) ? " ^ " :
+        (e->op_expr.op == OP_SHL) ? " << " :
+        (e->op_expr.op == OP_SHR) ? " >> " : " ? ";
+    strncat(buf, op, size - strlen(buf) - 1);
+
+    app_expr(e->op_expr.r, buf, size);
+    strncat(buf, ")", size - strlen(buf) - 1);
 }
 
 void free_expr(Expr *e) {
@@ -156,8 +184,8 @@ void free_expr(Expr *e) {
     free(e);
 }
 
+/* test if pixel is black for xpm function */
 int black_pix(Pixel p) {
-    /* test if pixel is black for xpm function */
     return p.r == 0x00 && p.g == 0x00 && p.b == 0x00;
 }
 
@@ -251,7 +279,7 @@ void save_bmp(Image *img) {
     fclose(f);
 }
 
-void save_xpm(Image *img) {
+void save_xpm(Image *img, char *expr_str, int c) {
     FILE *f = fopen(img->name, "w");
     if (!f) {
         fprintf(stderr, "couldn't open file %s for writing 🙈💩💥\n", img->name);
@@ -259,6 +287,7 @@ void save_xpm(Image *img) {
     }
 
     fprintf(f, "/* XPM */\n");
+    fprintf(f, "/* %s, c = %d */\n", expr_str, c);
     fprintf(f, "static const char *image[] = {\n");
     fprintf(f, "\"%d %d 2 1\",\n", img->h, img->w);
     fprintf(f, "\". c #000000\",\n");
@@ -404,7 +433,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /* note to self: auto detect filetype from ext passed? */
     if (!name_provided) {
         out.name = strdup(xpm ? "bitty.xpm" : "bitty.bmp");
         if (!out.name) {
@@ -420,20 +448,29 @@ int main(int argc, char *argv[]) {
     alloc_pix(&out);
     write_img(&out, e, c, thresh);
 
-    if (xpm)
-        save_xpm(&out);
-    else
+    char *expr_str = str_expr(e);
+    if (!expr_str) {
+        fprintf(stderr, "couldn't make expr string\n");
+        exit(1);
+    }
+
+    if (xpm) {
+        save_xpm(&out, expr_str, c);
+    } else {
         save_bmp(&out);
+    }
 
     free_pix(&out);
 
-    if (name_allocated)
+    if (name_allocated) {
         free(out.name);
+    }
 
     /* print the expression */
-    printf("expression: ");
-    print_expr(e);
-    printf("\nwhere c = %d\n", c);
+    printf("expr: %s\n", expr_str);
+    printf("where c = %d\n", c);
+
+    free(expr_str);
     free_expr(e);
 
     return 0;
