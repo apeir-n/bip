@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <time.h>
 #include <getopt.h>
 #include <string.h>
@@ -63,6 +64,7 @@ typedef struct {
 } Image;
 
 /* function declarations */
+void die(const char *fmt, ...);
 int clip(int val, int min, int max);
 Expr *make_expr(int depth);
 int eval_expr(Expr *e, int x, int y, int c);
@@ -76,8 +78,18 @@ void write_img(Image *img, Expr *e, int c, int thresh);
 void save_bmp(Image *img);
 void save_xpm(Image *img, char *expr_str, int c);
 void usage(void);
+void parse_args(int argc, char *argv[], Image *out, int *depth, int *random, int *thresh, int *xpm, int *name_provided, int *name_allocated);
 
 /* function implementations */
+void die(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+    exit(1);
+}
+
 int clip(int val, int min, int max) {
     if (val < min) return min;
     if (val > max) return max;
@@ -86,11 +98,7 @@ int clip(int val, int min, int max) {
 
 Expr *make_expr(int depth) {
     Expr *e = malloc(sizeof(Expr));
-
-    if (!e) {
-        fprintf(stderr, "couldn't malloc expression 🙈💩💥\n");
-        exit(1);
-    }
+    if (!e) die("resource allocation failed");
 
     /* base case: make a leaf */
     if (depth <= 1) {
@@ -191,16 +199,11 @@ int black_pix(Pixel p) {
 
 void alloc_pix(Image *img) {
     img->pix = malloc(img->h * sizeof(Pixel *));
-    if (!img->pix) {
-        fprintf(stderr, "couldn't malloc rows 🙈💩💥\n");
-        exit(1);
-    }
+    if (!img->pix) die("resource allocation failed");
+
     for (int i = 0; i < img->h; i += 1) {
         img->pix[i] = malloc(img->w * sizeof(Pixel));
-        if (!img->pix[i]) {
-            fprintf(stderr, "couldn't malloc row %d 🙈💩💥\n", i);
-            exit(1);
-        }
+        if (!img->pix[i]) die("resource allocation failed");
     }
 }
 
@@ -215,7 +218,6 @@ void write_img(Image *img, Expr *e, int c, int thresh) {
     for (int y = 0; y < img->h; y += 1) {
         for (int x = 0; x < img->w; x += 1) {
             int val = eval_expr(e, x, y, c);
-            /* int val = (((x | y) | (x | x)) ^ ((x << y) ^ (x ^ y))); */
 
             if (val % 256 > thresh) {
                 img->pix[y][x] = (Pixel){0xff, 0xff, 0xff};
@@ -228,10 +230,7 @@ void write_img(Image *img, Expr *e, int c, int thresh) {
 
 void save_bmp(Image *img) {
     FILE *f = fopen(img->name, "wb");
-    if (!f) {
-        fprintf(stderr, "couldn't open file %s for writing 🙈💩💥\n", img->name);
-        exit(1);
-    }
+    if (!f) die("couldn't open file for writing");
 
     /*  3 * width   3 bytes per pixel (rgb), so * width = num of bytes needed per row
      *  + 3         offset in order to round to nearest multiple of 4 after some bitwise math
@@ -281,10 +280,7 @@ void save_bmp(Image *img) {
 
 void save_xpm(Image *img, char *expr_str, int c) {
     FILE *f = fopen(img->name, "w");
-    if (!f) {
-        fprintf(stderr, "couldn't open file %s for writing 🙈💩💥\n", img->name);
-        exit(1);
-    }
+    if (!f) die("couldn't open file for writing");
 
     fprintf(f, "/* XPM */\n");
     fprintf(f, "/* %s, c = %d */\n", expr_str, c);
@@ -357,27 +353,7 @@ void usage() {
     printf("  \033[95mhttps://github.com/apeir-n/bip/blob/master/README.md\033[0m\n");
 }
 
-int main(int argc, char *argv[]) {
-
-    /* seed the random functions */
-    srand(time(NULL));
-
-    /* defaults */
-    int c = rand() % 30;
-    int depth = 2;
-    int random = 4;
-    int thresh = 5;
-    int size = 256;
-    int name_allocated = 0;
-    int name_provided = 0;
-    int xpm = 0;
-
-    Image out = {
-        .w = size,
-        .h = size,
-    };
-
-    /* declare and parse args */
+void parse_args(int argc, char *argv[], Image *out, int *depth, int *random, int *thresh, int *xpm, int *name_provided, int *name_allocated) {
     static struct option long_options[] = {
         {"width",   required_argument,  0,  'w'},
         {"height",  required_argument,  0,  'i'},
@@ -393,85 +369,92 @@ int main(int argc, char *argv[]) {
     int opt;
     while ((opt = getopt_long(argc, argv, "w:i:d:r:t:n:xh", long_options, NULL)) != -1) {
         switch (opt) {
-            case 'w': out.w = clip(atoi(optarg), 16, 8192); break;
-            case 'i': out.h = clip(atoi(optarg), 16, 8192); break;
-            case 'd': depth = clip(atoi(optarg), 2, 12); break;
-            case 'r': random = clip(atoi(optarg), 0, 6); break;
-            case 't': thresh = clip(atoi(optarg), 1, 255); break;
-            case 'x': xpm = 1; break;
-            case 'n':
-                {
-                    /* sanitize name input */
-                    if (!optarg || strlen(optarg) == 0) { fprintf(stderr, "filename can't be empty\n"); exit(1); }
-                    if (strstr(optarg, "/") || strstr(optarg, "..")) { fprintf(stderr, "filename can't include a / or ..\n"); exit(1); }
-                    if (strlen(optarg) > 240) { fprintf(stderr, "filename is too long\n"); exit(1); }
+            case 'w': out->w = clip(atoi(optarg), 16, 8192); break;
+            case 'i': out->h = clip(atoi(optarg), 16, 8192); break;
+            case 'd': *depth = clip(atoi(optarg), 2, 12); break;
+            case 'r': *random = clip(atoi(optarg), 0, 6); break;
+            case 't': *thresh = clip(atoi(optarg), 1, 255); break;
+            case 'x': *xpm = 1; break;
+            case 'n': {
+                if (!optarg || strlen(optarg) == 0)                 die("filename is empty");
+                if (strstr(optarg, "/") || strstr(optarg, ".."))    die("filename can't include a / or ..");
+                if (strlen(optarg) > 240)                           die("filename is too long");
 
-                    const char *ext = xpm ? ".xpm" : ".bmp";
-                    size_t len = strlen(optarg);
-                    size_t extlen = strlen(ext);
+                const char *ext = xpm ? ".xpm" : ".bmp";
+                size_t len = strlen(optarg);
+                size_t extlen = strlen(ext);
 
-                    /* if the user gives a file extension, copy it; else add it in (according to filetype from xpm ternary above) */
-                    if (len >= extlen && strcmp(optarg + len - extlen, ext) == 0) {
-                        out.name = strdup(optarg);
-                    } else {
-                        out.name = malloc(len + extlen + 1);
-                        if (!out.name) {
-                            fprintf(stderr, "couldn't malloc filename\n");
-                            exit(1);
-                        }
-                        snprintf(out.name, len + extlen + 1, "%s%s", optarg, ext);
-                    }
-                    name_allocated = 1;
-                    name_provided = 1;
+                /* if the user gives a file extension, copy it; else add it in (according to filetype from xpm ternary above) */
+                if (len >= extlen && strcmp(optarg + len - extlen, ext) == 0) {
+                    out->name = strdup(optarg);
+                } else {
+                    out->name = malloc(len + extlen + 1);
+                    if (!out->name) die("resource allocation failed");
+                    snprintf(out->name, len + extlen + 1, "%s%s", optarg, ext);
                 }
-                break;
-            case 'h': usage(); return 0;
+                *name_allocated = 1;
+                *name_provided = 1;
+            } break;
+            case 'h':
+                usage();
+                exit(0);
             default:
                 printf("usage:\n");
                 usage();
-                return 1;
+                exit(1);
         }
     }
+}
+
+int main(int argc, char *argv[]) {
+    srand(time(NULL));
+
+    /* defaults */
+    int c = rand() % 30;
+    int depth = 2;
+    int random = 4;
+    int thresh = 5;
+    int size = 256;
+    int name_allocated = 0;
+    int name_provided = 0;
+    int xpm = 0;
+    Image out = {
+        .w = size,
+        .h = size,
+        .name = NULL,
+    };
+
+    /* cli args */
+    parse_args(argc, argv, &out, &depth, &random, &thresh, &xpm, &name_provided, &name_allocated);
 
     if (!name_provided) {
         out.name = strdup(xpm ? "bitty.xpm" : "bitty.bmp");
-        if (!out.name) {
-            fprintf(stderr, "couldn't allocate default name\n");
-            exit(1);
-        }
+        if (!out.name) die("resource allocation failed");
         name_allocated = 1;
     }
 
-    /* do the image stuff */
+    /* prepare expr stuff */
     int randepth = depth + (random > 0 ? rand() % random : 0);
     Expr *e = make_expr(randepth);
+    char *expr_str = str_expr(e);
+    if (!expr_str) die("resource allocation failed");
+
+    /* do image stuff */
     alloc_pix(&out);
     write_img(&out, e, c, thresh);
+    if (xpm) save_xpm(&out, expr_str, c);
+    else save_bmp(&out);
 
-    char *expr_str = str_expr(e);
-    if (!expr_str) {
-        fprintf(stderr, "couldn't make expr string\n");
-        exit(1);
-    }
-
-    if (xpm) {
-        save_xpm(&out, expr_str, c);
-    } else {
-        save_bmp(&out);
-    }
-
-    free_pix(&out);
-
-    if (name_allocated) {
-        free(out.name);
-    }
-
-    /* print the expression */
+    /* print expr */
     printf("expr: %s\n", expr_str);
     printf("where c = %d\n", c);
 
+    /* cleanup */
+    free_pix(&out);
+    if (name_allocated) free(out.name);
     free(expr_str);
     free_expr(e);
 
+    /* goodbye */
     return 0;
 }

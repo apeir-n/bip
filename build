@@ -25,13 +25,12 @@ runner () {
             }
             ;;
         *)
-            images="$(finder)"
             if command -v nsxiv >/dev/null 2>&1; then
-                nsxiv --anti-alias=no "$images"
+                nsxiv --anti-alias=no *.bmp *.xpm >/dev/null 2>&1
             elif command -v feh >/dev/null 2>&1; then
-                feh --force-aliasing "$images"
+                feh --force-aliasing *.bmp *.xpm >/dev/null 2>&1
             else
-                xdg-open "$images"
+                xdg-open *.bmp *.xpm >/dev/null 2>&1
             fi
             ;;
     esac
