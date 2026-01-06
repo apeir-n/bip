@@ -1,5 +1,3 @@
-# bip
-
 ![bipslip](assets/bipslipbig.png)
 
 ---
