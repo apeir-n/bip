@@ -44,25 +44,28 @@ The script is called `build` and can be run with `./build make` in the root dire
 4. to uninstall, run `./build uninstall`, or just delete the two bip bops from `~/.local/bin`.
 
 ```
-  build [options: run, install, clean, ... ]
+  build [subcommands: run, install, clean, ... ]
 
   this script offers a simple way to compile, run, and install bip.
 
-  options:
+  subcommands:
 
-      build make      - compiles the program, runs it, and opens the resulting image.
-      build run       - runs the program and opens the resulting image (it must be compiled first).
-      build install   - moves bip and the bop script from here to the user's ~/.local/bin directory.
-      build uninstall - removes bip and bop from the user's ~/.local/bin directory.
-      build clean     - removes the image files and binary from this directory.
-      build help      - displays this help message.
+      build make      - compiles the program, runs it, and opens the resulting image
+      build run       - runs the program & opens the resulting image (must be compiled)
+      build install   - moves bip and the bop script to ~/.local/bin and runs build clean
+      build uninstall - removes bip and bop from ~/.local/bin
+      build clean     - removes the image files and binary from this directory
+      build help      - displays this help message
 
-  to pass cli args to bip itself, write them after the build script's command.
+  to pass cli args to bip itself, write them after the build script's subcommand.
   for instance, to change the name of the generated image file, run:
 
-      ./build make --name=boppajam.bmp
+      ./build make --name=boppajam
 
-  to see a full list, run ./build run --help, or just ./bip --help to call the binary directly.
+  the --name flag will be passed to bip when ./build make runs it, after it compiles it.
+  then it will automatically open your silly new boppajam.bmp file!
+  to see a full list of bip's cli options, run ./build run --help, or just ./bip --help
+  to call the binary directly, after it's been compiled.
 ```
 
 ---
@@ -75,5 +78,14 @@ Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` can 
 
 #### acknowledgements
 [bit](github.com/superstarryeyes/bit) - fucking awesome meta-font playground that i used in the logo
+[bit art bot](https://freeradical.zone/@bitartbot) - a bot on mastodon that generates similar images, written in ruby
+[timClicks](https://www.youtube.com/live/KGIGbU6dDFE?si=47tzUBFq0Y3e4Dm4) - a rust tutorial for implementing the basic functionality, which was inspired by the bit art bot above, and which originally got me interested in trying it in c
+
+---
+
+#### license
+BSD 2-Clause, copyright B. R. Shellito. See [license](LICENSE.md) for details.
+
+---
 
 This project was just an exercise for me while I try learning c. If you have advice for better programming practices or whatever, let me know.
