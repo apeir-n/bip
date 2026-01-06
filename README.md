@@ -1,12 +1,16 @@
 # bip
 
-![bipslip](assets/bipslip.png)
+![bipslip](assets/bipslipbig.png)
 
 ---
 
 `bip` is an algorithmic image generator that can be used to make interesting patterns with pixels. The magic in `bip` lies in the recursive tree structure it uses to generate an expression, which is then evaluated to a single integer for each pixel, and written to the 2d array to make the output image. The image will be output to the current working directory from which `bip` was called, and then can be opened with an image viewer.
 
 This repo has a `build` script that when run, will automatically compile, execute, and open the image in an image viewer. After it's been compiled, you can use `build` to just run the program and open the resulting image with `./build run`.
+
+---
+
+### diagram of recursive tree
 
 ```
                            ┌─────────────┐                                                                                  ┌─────────────────────────────────────────┐
@@ -61,9 +65,13 @@ The script is called `build` and can be run with `./build make` in the root dire
   to see a full list, run ./build run --help, or just ./bip --help to call the binary directly.
 ```
 
-![bipchunk](assets/bipchunk.png)
+---
 
-Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` can make.
+![bipchunk](assets/bipchunkbig.png)
+
+Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` can do.
+
+---
 
 #### acknowledgements
 [bit](github.com/superstarryeyes/bit) - fucking awesome meta-font playground that i used in the logo
