@@ -1,6 +1,6 @@
 # bip
 
-![bip](assets/bipslipbig.png)
+![bipslip](assets/bipslip.png)
 
 ---
 
@@ -60,6 +60,10 @@ The script is called `build` and can be run with `./build make` in the root dire
 
   to see a full list, run ./build run --help, or just ./bip --help to call the binary directly.
 ```
+
+![bipchunk](assets/bipchunk.png)
+
+Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` can make.
 
 #### acknowledgements
 [bit](github.com/superstarryeyes/bit) - fucking awesome meta-font playground that i used in the logo
