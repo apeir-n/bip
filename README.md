@@ -78,7 +78,9 @@ Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` can 
 
 #### acknowledgements
 [bit](github.com/superstarryeyes/bit) - fucking awesome meta-font playground that i used in the logo
+
 [bit art bot](https://freeradical.zone/@bitartbot) - a bot on mastodon that generates similar images, written in ruby
+
 [timClicks](https://www.youtube.com/live/KGIGbU6dDFE?si=47tzUBFq0Y3e4Dm4) - a rust tutorial for implementing the basic functionality, which was inspired by the bit art bot above, and which originally got me interested in trying it in c
 
 ---
