@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# for turning exprs into image titles for bmps
+# (xpm files have the expr as a comment in the file)
+# text output of bip: (((x * y) - (y >> x)) / ((x - c) & (c + y))), c = 16
+# name of generated file: (((x*y)-(y>>x))\((x-c)&(c+y))).bmp
+
+mv bitty.bmp "$(bip | sed 's/ //g;s/\//\\/g').bmp"

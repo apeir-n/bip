@@ -425,7 +425,17 @@ int main(int argc, char *argv[]) {
     };
 
     /* cli args */
-    parse_args(argc, argv, &out, &depth, &random, &thresh, &xpm, &name_provided, &name_allocated);
+    parse_args(
+            argc,
+            argv,
+            &out,
+            &depth,
+            &random,
+            &thresh,
+            &xpm,
+            &name_provided,
+            &name_allocated
+            );
 
     if (!name_provided) {
         out.name = strdup(xpm ? "bitty.xpm" : "bitty.bmp");
@@ -446,8 +456,7 @@ int main(int argc, char *argv[]) {
     else save_bmp(&out);
 
     /* print expr */
-    printf("expr: %s\n", expr_str);
-    printf("where c = %d\n", c);
+    printf("%s, c = %d\n", expr_str, c);
 
     /* cleanup */
     free_pix(&out);
