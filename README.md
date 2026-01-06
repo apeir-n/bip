@@ -72,7 +72,7 @@ The script is called `build` and can be run with `./build make` in the root dire
 
 ![bipchunk](assets/bipchunkbig.png)
 
-Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` can do.
+Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` does.
 
 ---
 
