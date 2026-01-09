@@ -2,7 +2,7 @@
 
 ---
 
-`bip` is an algorithmic image generator that can be used to make interesting patterns with pixels. The magic in `bip` lies in the recursive tree structure it uses to generate a random expression, which is then evaluated to a single integer for each pixel, and written to the 2d array to make the output image. The image will be output to the current working directory from which `bip` was called, and then can be opened with an image viewer.
+`bip` is a very tiny algorithmic image generator that can be used to make interesting patterns with pixels. The magic in `bip` lies in the recursive tree structure it uses to generate a random expression, which is then evaluated to a single integer for each pixel, and written to the 2d array to make the output image. The image will be output to the current working directory from which `bip` was called, and then can be opened with an image viewer.
 
 This repo also comes with a couple useful scripts to make using `bip` more ergonomic. The main one is called `build`, which can be used for several operations, but the main purpose is to compile, execute, and open the image in an image viewer all in one command. It can also be used to just run `bip` and open the image (after it's been compiled), and to install the program if you like it. The other main script is called `bop` (naturally), and it's designed to be used exactly like `bip`, except it automatically opens the resulting image file in your image viewer after it's been generated. Additionally, `bop` can be used to convert the image to another file format.
 
