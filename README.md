@@ -1,4 +1,4 @@
-![bipslip](assets/bipslipbig.png)
+![bipslip](assets/bipslip.png)
 
 ---
 
@@ -15,6 +15,8 @@ More details on these scripts and `bip` in general can be found below.
 I didn't feel like using `make` because this is such a small project, but I ended up overengineering an install script anyway... 
 
 The script is called `build` and can be run with `./build make` in the root directory of the repo. I initially made it to make it easier to test during development, so it works well if you just want to quickly run the program and see what it does. If you like it, you can use the script to install it to your `~/.local/bin` directory. Make sure `~/.local/bin` is in your `$PATH` in order to call it from the command line.
+
+`bip` does not use any external dependencies and only relies on the standard C library to compile.
 
 #### install instructions:
 
@@ -150,7 +152,7 @@ bop convert png
 
 ---
 
-![bipchunk](assets/bipchunkbig.png)
+![bipchunk](assets/bipchunk.png)
 
 Check out the [gallery](assets/gallery.md) to see what kinda nonsense `bip` does.
 
