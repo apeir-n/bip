@@ -20,7 +20,7 @@ The script is called `build` and can be run with `./build make` in the root dire
 
 1. run `./build make` to compile, execute, and open the resulting image all in one go.
 2. after it's compiled, you can run `./build run` to just execute and open the resulting image.
-3. run `./build install` to install the binary and another useful script that runs the binary/opens images to `~/.local/bin` (`bip` and `bop`, respectively (naturally)).
+3. run `./build install` to install `bip` and `bop` to your `~/.local/bin` directory.
 4. to uninstall, run `./build uninstall`, or just delete the two bip bops from `~/.local/bin`.
 
 ```
