@@ -102,7 +102,7 @@ Running `bip` without any flags will generate a decent range of variation (accor
   recursion depth of 2, but can go much deeper with a high randomness level.
 ```
 
-### diagram of recursive tree
+### diagram
 
 Here's a diagram of the recursion algorithm:
 
@@ -146,8 +146,7 @@ bop convert png
 "That's better! Now, time to show off my new `bubble.png` file online for all to see!"
 
 >[!note]
-> `bop` acts on all bmp and xpm files in your current directory, so it will both open and convert all of them. But it won't also delete the original versions after conversion.
-> And again, ImageMagick is needed for the conversion function.
+> `bop` acts on all bmp and xpm files in your current directory, so it will both open and convert all of them. But it won't also delete the original versions after conversion. And again, ImageMagick is needed for the conversion function.
 
 ---
 

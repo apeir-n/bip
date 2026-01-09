@@ -339,7 +339,7 @@ void usage() {
     printf("      \033[94mbip \033[93m--depth\033[94m=\033[91m4 \033[93m--random\033[94m=\033[91m0 \033[93m--name\033[94m=\033[91mboppajam\033[96m\n\n");
     printf("  this will generate an image named 'boppajam.bmp' using an expression\n");
     printf("  that's always the same length, at a recursion depth of 4.\n\n");
-    printf("      \033[94mbip \033[93m-d \033[91m2 \033[93m-r \033[91m6 \033[93m-w \033[91m1024 \033[93m-i \033[91m1024\033[96m \033[93m-x\n\n");
+    printf("      \033[94mbip \033[93m-d \033[91m2 \033[93m-r \033[91m6 \033[93m-w \033[91m1024 \033[93m-i \033[91m1024 \033[93m-x\033[96m\n\n");
     printf("  this will generate a 1024x1024 size XPM that uses an expr with a minimum\n");
     printf("  recursion depth of 2, but can go much deeper with a high randomness level.\n\n");
     printf("  \033[4;92minfo\033[0;96m:\n");
