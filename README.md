@@ -152,7 +152,7 @@ bop convert png
 The last argument in `bop convert` is just passed to ImageMagick as the file extension for the output file, so keep that in mind. If you do `bop convert jpg` it'll convert to jpeg, but if you do `bop convert poop`, it'll just give you another bitmap file with an extension like `bubble.poop`.
 
 >[!note]
-> `bop` acts on all bmp and xpm files in your current directory, so it will both open and convert all of them. But it won't also delete the original versions after conversion. And again, ImageMagick is needed for the conversion function.
+> `bop` acts on all bmp and xpm files in your current directory, so it will both open and convert all of them. But it won't also delete the original versions after conversion.
 
 ---
 
