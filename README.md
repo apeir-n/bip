@@ -16,7 +16,9 @@ I didn't feel like using `make` because this is such a small project, but I ende
 
 The script is called `build` and can be run with `./build make` in the root directory of the repo. I initially made it to make it easier to test during development, so it works well if you just want to quickly run the program and see what it does. If you like it, you can use the script to install it to your `~/.local/bin` directory. Make sure `~/.local/bin` is in your `$PATH` in order to call it from the command line.
 
-`bip` does not use any external dependencies and only relies on the standard C library to compile.
+`bip` does not use any external dependencies and only relies on the standard C library to compile. I tried to make it as portable as possible, so I figured that having users compile it themselves would be the best route, and it should be able to be compiled on any system out of the box. I've been using it on macOS, Void Linux musl and glibc, and OpenBSD.
+
+So the build script should work on any Unix, including the automatic image opening functionality. On any non-mac Unix, it will try `nsxiv`, `feh`, and then `xdg-open`, in that order (I wanted to pass flags to disable anti-aliasing before falling back to `xdg-open`). On macOS it just uses the built in `open` command, which should open Preview for .bmps, and then try `$EDITOR`, `vim`, or TextEdit for xpms, in that order. Unfortunately there aren't any mac apps that can view xpms as images, though you can use `feh` or `nsxiv` with an x11 compatibility layer like X11 from macports or XQuartz. The build script was written for Unix so I doubt it'll work on Windows, but I think you should still be able to compile `bip` manually.
 
 #### install instructions:
 
